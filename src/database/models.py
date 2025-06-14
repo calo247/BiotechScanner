@@ -17,7 +17,7 @@ class Company(Base):
     
     id = Column(Integer, primary_key=True)
     ticker = Column(String(10), unique=True, nullable=False, index=True)
-    name = Column(String(255), nullable=False)
+    name = Column(Text, nullable=False)  # Company names can be long
     sector = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -40,23 +40,23 @@ class Drug(Base):
     company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
     
     # Drug information
-    drug_name = Column(String(255), nullable=False)
+    drug_name = Column(Text, nullable=False)  # No length limit
     mechanism_of_action = Column(Text)
     
     # Indication information (storing as JSON for flexibility)
     indications = Column(JSON)  # List of indication objects
-    indications_text = Column(String(500))  # Text representation
+    indications_text = Column(Text)  # No length limit
     
     # Stage and event
-    stage = Column(String(50))  # e.g., "Phase 2", "Approved"
-    stage_event_label = Column(String(100))  # Full label from API
+    stage = Column(String(100))  # This is probably fine with a limit
+    stage_event_label = Column(Text)  # No length limit
     event_score = Column(Integer)  # Score from API
     
     # Catalyst information
     catalyst_date = Column(DateTime)
-    catalyst_date_text = Column(String(50))  # Text representation (e.g., "Q1 2024", "TBA")
+    catalyst_date_text = Column(String(100))  # This is probably fine with a limit
     has_catalyst = Column(Boolean, default=False)
-    catalyst_source = Column(String(500))  # URL
+    catalyst_source = Column(Text)  # URLs can be long
     
     # Analysis flags
     is_big_mover = Column(Boolean, default=False)

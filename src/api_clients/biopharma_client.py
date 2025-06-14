@@ -116,7 +116,7 @@ class BiopharmIQClient:
             db.commit()
             logger.info(f"Cache updated for {endpoint}")
     
-    def get_all_drugs(self, use_cache: bool = True) -> List[Dict[str, Any]]:
+    def get_all_drugs(self, use_cache: bool = True, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Fetch all drugs from the API.
         
@@ -124,14 +124,15 @@ class BiopharmIQClient:
         
         Args:
             use_cache: Whether to use cached data if available
+            limit: Maximum number of drugs to fetch (None for all)
             
         Returns:
             List of all drug records
         """
         endpoint = "/drugs/"
         
-        # Check cache first
-        if use_cache:
+        # Check cache first (only if we're getting all drugs)
+        if use_cache and limit is None:
             cached_data = self._check_cache(endpoint)
             if cached_data and 'all_results' in cached_data:
                 return cached_data['all_results']
@@ -140,13 +141,16 @@ class BiopharmIQClient:
         next_url = endpoint
         page = 1
         
-        logger.info("Fetching drugs from BiopharmIQ API...")
+        # Determine page size
+        page_size = min(100, limit) if limit and limit < 100 else 100
+        
+        logger.info(f"Fetching drugs from BiopharmIQ API{f' (limit: {limit})' if limit else ''}...")
         
         while next_url:
             # Make request
             if page == 1:
-                # First page - set limit to 100
-                response = self._make_request(next_url, params={'limit': 100})
+                # First page - set limit
+                response = self._make_request(next_url, params={'limit': page_size})
             else:
                 # For pagination, we need to use the full URL
                 # Extract the offset from the next URL
@@ -161,6 +165,12 @@ class BiopharmIQClient:
             
             logger.info(f"Fetched page {page}: {len(drugs)} drugs (total: {len(all_drugs)})")
             
+            # Check if we've reached our limit
+            if limit and len(all_drugs) >= limit:
+                all_drugs = all_drugs[:limit]  # Trim to exact limit
+                logger.info(f"Reached limit of {limit} drugs")
+                break
+            
             # Check for next page
             next_url = response.get('next')
             if next_url:
@@ -172,8 +182,8 @@ class BiopharmIQClient:
         
         logger.info(f"Fetched total of {len(all_drugs)} drugs")
         
-        # Cache all results
-        if use_cache:
+        # Cache all results only if we fetched everything
+        if use_cache and limit is None:
             self._update_cache(endpoint, {'all_results': all_drugs})
         
         return all_drugs

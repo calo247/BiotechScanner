@@ -59,6 +59,10 @@ class DataSynchronizer:
         Returns:
             Company instance
         """
+        if not company_data:
+            logger.warning("No company data provided")
+            return None
+            
         ticker = company_data.get('ticker', '').upper()
         
         if not ticker:
@@ -78,16 +82,19 @@ class DataSynchronizer:
                 sector='Biotechnology'  # Default sector, can be updated later
             )
             db.add(company)
+            # Need to flush to get the ID before using it
+            db.flush()
             logger.debug(f"Created new company: {ticker}")
         
         return company
     
-    def sync_drugs(self, force_refresh: bool = False):
+    def sync_drugs(self, force_refresh: bool = False, limit: Optional[int] = None):
         """
         Synchronize drug data from BiopharmIQ API to database.
         
         Args:
             force_refresh: If True, bypass cache and fetch fresh data
+            limit: If set, only sync this many drugs (for testing)
         """
         logger.info("Starting drug data synchronization...")
         
@@ -98,7 +105,11 @@ class DataSynchronizer:
         
         # Fetch all drugs
         try:
-            drugs_data = self.biopharma_client.get_all_drugs(use_cache=not force_refresh)
+            drugs_data = self.biopharma_client.get_all_drugs(
+                use_cache=not force_refresh,
+                limit=limit
+            )
+                
         except Exception as e:
             logger.error(f"Failed to fetch drugs: {e}")
             return
@@ -114,11 +125,22 @@ class DataSynchronizer:
                 'companies_created': 0
             }
             
+            # Keep track of existing companies to avoid repeated queries
+            company_cache = {}
+            
             for drug_data in tqdm(drugs_data, desc="Processing drugs"):
                 try:
                     # Get or create company
                     company_data = drug_data.get('company', {})
-                    company = self._get_or_create_company(db, company_data)
+                    ticker = company_data.get('ticker', '').upper()
+                    
+                    # Check cache first
+                    if ticker in company_cache:
+                        company = company_cache[ticker]
+                    else:
+                        company = self._get_or_create_company(db, company_data)
+                        if company:
+                            company_cache[ticker] = company
                     
                     if not company:
                         stats['errors'] += 1
@@ -167,14 +189,24 @@ class DataSynchronizer:
                         db.add(drug)
                         stats['created'] += 1
                     
+                    # Commit every 100 drugs to avoid memory issues
+                    if (stats['created'] + stats['updated']) % 100 == 0:
+                        db.commit()
+                        
                 except Exception as e:
                     logger.error(f"Error processing drug {drug_data.get('id')}: {e}")
                     stats['errors'] += 1
-                    db.rollback()
+                    # Don't rollback the entire transaction, just skip this drug
                     continue
             
-            # Commit all changes
-            db.commit()
+            # Final commit for any remaining drugs
+            try:
+                db.commit()
+                logger.info("Database commit successful")
+            except Exception as e:
+                logger.error(f"Error during final commit: {e}")
+                db.rollback()
+                raise
             
         # Log summary
         logger.info(f"\nSynchronization complete:")

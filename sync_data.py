@@ -26,6 +26,11 @@ def main():
         action='store_true',
         help='Show sync status only'
     )
+    parser.add_argument(
+        '--limit',
+        type=int,
+        help='Limit number of drugs to sync (for testing)'
+    )
     
     args = parser.parse_args()
     
@@ -56,8 +61,10 @@ def main():
         # Run sync
         print("\n=== Starting BiopharmIQ Data Sync ===")
         print(f"Force refresh: {args.force}")
+        if args.limit:
+            print(f"Limiting to {args.limit} drugs")
         
-        data_synchronizer.sync_drugs(force_refresh=args.force)
+        data_synchronizer.sync_drugs(force_refresh=args.force, limit=args.limit)
         
         # Show final status
         status = data_synchronizer.get_sync_status()

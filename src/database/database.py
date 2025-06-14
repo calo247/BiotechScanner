@@ -14,7 +14,7 @@ from .models import Base
 load_dotenv()
 
 # Get database URL from environment
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/drug.db')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/catalyst.db')
 
 # Create engine with SQLite-specific optimizations
 if DATABASE_URL.startswith('sqlite'):
@@ -65,7 +65,7 @@ def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
-        db.commit()
+        # Don't auto-commit here - let the caller decide when to commit
     except Exception:
         db.rollback()
         raise
