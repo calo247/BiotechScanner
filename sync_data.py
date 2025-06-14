@@ -31,6 +31,21 @@ def main():
         type=int,
         help='Limit number of drugs to sync (for testing)'
     )
+    parser.add_argument(
+        '--stocks',
+        action='store_true',
+        help='Sync stock data only'
+    )
+    parser.add_argument(
+        '--ticker',
+        type=str,
+        help='Sync stock data for specific ticker only'
+    )
+    parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Sync both drugs and stock data'
+    )
     
     args = parser.parse_args()
     
@@ -44,6 +59,8 @@ def main():
         print(f"Total drugs: {status['total_drugs']}")
         print(f"Total companies: {status['total_companies']}")
         print(f"Drugs with catalysts: {status['drugs_with_catalysts']}")
+        print(f"Stock data records: {status['stock_data_records']}")
+        print(f"Companies with stock data: {status['companies_with_stock_data']}")
         
         if status['last_sync']:
             print(f"Last sync: {status['last_sync'].strftime('%Y-%m-%d %H:%M:%S UTC')}")
@@ -57,8 +74,24 @@ def main():
                 print("Cache expired - next sync will fetch fresh data")
         else:
             print("No previous sync found")
+    
+    elif args.stocks:
+        # Sync stock data only
+        print("\n=== Stock Data Sync ===")
+        if args.ticker:
+            print(f"Syncing stock data for {args.ticker}...")
+            data_synchronizer.sync_stock_data(ticker=args.ticker)
+        else:
+            print("Syncing stock data for all companies...")
+            data_synchronizer.sync_stock_data()
+    
+    elif args.all:
+        # Sync everything
+        print("\n=== Full Data Sync ===")
+        data_synchronizer.sync_all(force_refresh=args.force, limit=args.limit)
+        
     else:
-        # Run sync
+        # Default: sync drugs only
         print("\n=== Starting BiopharmIQ Data Sync ===")
         print(f"Force refresh: {args.force}")
         if args.limit:

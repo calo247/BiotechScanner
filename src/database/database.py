@@ -14,7 +14,7 @@ from .models import Base
 load_dotenv()
 
 # Get database URL from environment
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/catalyst.db')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/default.db')
 
 # Create engine with SQLite-specific optimizations
 if DATABASE_URL.startswith('sqlite'):

@@ -7,8 +7,9 @@ from dateutil import parser as date_parser
 from tqdm import tqdm
 
 from .api_clients.biopharma_client import biopharma_client
+from .api_clients.yahoo_client import yahoo_client
 from .database.database import get_db
-from .database.models import Company, Drug, APICache
+from .database.models import Company, Drug, APICache, StockData
 from .config import config
 
 # Set up logging
@@ -21,6 +22,7 @@ class DataSynchronizer:
     
     def __init__(self):
         self.biopharma_client = biopharma_client
+        self.yahoo_client = yahoo_client
     
     def _parse_catalyst_date(self, date_value: Any) -> Optional[datetime]:
         """
@@ -219,6 +221,56 @@ class DataSynchronizer:
         logger.info(f"  - Errors: {stats['errors']}")
         logger.info(f"  - Total drugs in database: {stats['created'] + stats['updated']}")
     
+    def sync_stock_data(self, ticker: Optional[str] = None):
+        """
+        Synchronize stock data from Yahoo Finance.
+        
+        Args:
+            ticker: Specific ticker to sync, or None for all companies
+        """
+        logger.info("Starting stock data synchronization...")
+        
+        if ticker:
+            # Sync specific company
+            with get_db() as db:
+                company = db.query(Company.id, Company.ticker).filter(
+                    Company.ticker == ticker.upper()
+                ).first()
+                
+                if not company:
+                    logger.error(f"Company with ticker {ticker} not found")
+                    return
+                
+                company_id, ticker = company
+                records = self.yahoo_client.update_company_stock_data(company_id, ticker)
+                logger.info(f"Added {records} stock records for {ticker}")
+        else:
+            # Sync all companies
+            stats = self.yahoo_client.update_all_companies_stock_data()
+            
+            logger.info(f"\nStock sync complete:")
+            logger.info(f"  - Companies processed: {stats['companies_processed']}")
+            logger.info(f"  - Companies skipped: {stats['companies_skipped']}")
+            logger.info(f"  - Records added: {stats['records_added']}")
+            logger.info(f"  - Errors: {stats['errors']}")
+            if stats.get('interrupted'):
+                logger.info("  - Status: INTERRUPTED BY USER")
+    
+    def sync_all(self, force_refresh: bool = False, limit: Optional[int] = None):
+        """
+        Sync both drug and stock data.
+        
+        Args:
+            force_refresh: Force refresh of BiopharmIQ data
+            limit: Limit number of drugs to sync
+        """
+        # First sync drugs
+        self.sync_drugs(force_refresh=force_refresh, limit=limit)
+        
+        # Then sync stock data
+        logger.info("\nStarting stock data sync...")
+        self.sync_stock_data()
+    
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""
         with get_db() as db:
@@ -237,10 +289,16 @@ class DataSynchronizer:
                 Drug.has_catalyst == True
             ).count()
             
+            # Count stock data records
+            stock_data_count = db.query(StockData).count()
+            companies_with_stock = db.query(StockData.company_id).distinct().count()
+            
             return {
                 'total_drugs': drug_count,
                 'total_companies': company_count,
                 'drugs_with_catalysts': catalyst_count,
+                'stock_data_records': stock_data_count,
+                'companies_with_stock_data': companies_with_stock,
                 'last_sync': last_sync,
                 'cache_expires': last_sync + config.get_cache_expiry() if last_sync else None
             }
