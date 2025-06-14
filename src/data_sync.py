@@ -63,28 +63,32 @@ class DataSynchronizer:
             logger.warning("No company data provided")
             return None
             
+        biopharma_company_id = company_data.get('id')
         ticker = company_data.get('ticker', '').upper()
         
+        if not biopharma_company_id:
+            logger.error(f"Company missing BiopharmIQ ID: {company_data}")
+            return None
+            
         if not ticker:
-            logger.warning(f"Company without ticker: {company_data}")
+            logger.error(f"Company missing ticker: {company_data}")
             return None
         
-        # Check if company exists
+        # Check if company exists by BiopharmIQ ID (the only way we match)
         company = db.query(Company).filter(
-            Company.ticker == ticker
+            Company.biopharma_id == biopharma_company_id
         ).first()
         
         if not company:
             # Create new company
             company = Company(
+                biopharma_id=biopharma_company_id,
                 ticker=ticker,
                 name=company_data.get('name', ticker),
                 sector='Biotechnology'  # Default sector, can be updated later
             )
             db.add(company)
-            # Need to flush to get the ID before using it
-            db.flush()
-            logger.debug(f"Created new company: {ticker}")
+            logger.debug(f"Created new company: {ticker} (BiopharmIQ ID: {biopharma_company_id})")
         
         return company
     
@@ -158,7 +162,7 @@ class DataSynchronizer:
                     
                     # Prepare drug data
                     drug_attrs = {
-                        'company_id': company.id,
+                        'company': company,  # Use relationship instead of company_id
                         'drug_name': drug_data.get('drug_name', ''),
                         'mechanism_of_action': drug_data.get('mechanism_of_action', ''),
                         'indications': drug_data.get('indications', []),

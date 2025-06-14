@@ -16,6 +16,7 @@ class Company(Base):
     __tablename__ = 'companies'
     
     id = Column(Integer, primary_key=True)
+    biopharma_id = Column(Integer, unique=True, index=True)  # BiopharmIQ's company ID
     ticker = Column(String(10), unique=True, nullable=False, index=True)
     name = Column(Text, nullable=False)  # Company names can be long
     sector = Column(String(100))

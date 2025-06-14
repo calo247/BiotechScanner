@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import logging
 from urllib.parse import urlparse, parse_qs
+import json
+import os
 
 from ..config import config
 from ..database.database import get_db
@@ -24,6 +26,10 @@ class BiopharmIQClient:
             "Authorization": f"Token {self.api_key}"
         }
         self.timeout = config.REQUEST_TIMEOUT
+        
+        # Create directory for API responses
+        self.api_response_dir = "data/api_responses"
+        os.makedirs(self.api_response_dir, exist_ok=True)
         
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -95,6 +101,26 @@ class BiopharmIQClient:
                     
         return None
     
+    def _save_response_to_file(self, endpoint: str, data: Any):
+        """
+        Save API response to a JSON file for manual inspection.
+        
+        Args:
+            endpoint: API endpoint
+            data: Response data to save
+        """
+        # Create filename based on endpoint and timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        endpoint_safe = endpoint.replace('/', '_').strip('_')
+        filename = f"{endpoint_safe}_{timestamp}.json"
+        filepath = os.path.join(self.api_response_dir, filename)
+        
+        # Save with pretty formatting
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"Saved API response to: {filepath}")
+    
     def _update_cache(self, endpoint: str, data: Dict[str, Any]):
         """Update cache with new data."""
         with get_db() as db:
@@ -115,6 +141,9 @@ class BiopharmIQClient:
             
             db.commit()
             logger.info(f"Cache updated for {endpoint}")
+        
+        # Also save to file for manual inspection
+        self._save_response_to_file(endpoint, data)
     
     def get_all_drugs(self, use_cache: bool = True, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
@@ -181,6 +210,15 @@ class BiopharmIQClient:
             page += 1
         
         logger.info(f"Fetched total of {len(all_drugs)} drugs")
+        
+        # Save the complete response to file
+        if all_drugs:  # Only save if we got data
+            complete_response = {
+                'all_results': all_drugs,
+                'fetched_at': datetime.utcnow().isoformat(),
+                'total_count': len(all_drugs)
+            }
+            self._save_response_to_file(endpoint, complete_response)
         
         # Cache all results only if we fetched everything
         if use_cache and limit is None:
