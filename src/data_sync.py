@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from dateutil import parser as date_parser
 from tqdm import tqdm
+import signal
 
 from .api_clients.biopharma_client import biopharma_client
 from .api_clients.yahoo_client import yahoo_client
@@ -23,6 +24,15 @@ class DataSynchronizer:
     def __init__(self):
         self.biopharma_client = biopharma_client
         self.yahoo_client = yahoo_client
+        self.interrupted = False
+        
+        # Set up signal handler for graceful shutdown
+        signal.signal(signal.SIGINT, self._signal_handler)
+    
+    def _signal_handler(self, signum, frame):
+        """Handle Ctrl+C gracefully."""
+        logger.info("\n\nReceived interrupt signal. Finishing current drug and stopping...")
+        self.interrupted = True
     
     def _parse_catalyst_date(self, date_value: Any) -> Optional[datetime]:
         """
@@ -121,6 +131,10 @@ class DataSynchronizer:
             return
         
         logger.info(f"Processing {len(drugs_data)} drugs...")
+        logger.info("Press Ctrl+C to stop gracefully after current drug\n")
+        
+        # Reset interrupt flag
+        self.interrupted = False
         
         # Process drugs in batches
         with get_db() as db:
@@ -128,13 +142,19 @@ class DataSynchronizer:
                 'created': 0,
                 'updated': 0,
                 'errors': 0,
-                'companies_created': 0
+                'companies_created': 0,
+                'interrupted': False
             }
             
             # Keep track of existing companies to avoid repeated queries
             company_cache = {}
             
             for drug_data in tqdm(drugs_data, desc="Processing drugs"):
+                if self.interrupted:
+                    stats['interrupted'] = True
+                    tqdm.write("Interrupted - finishing current drug...")
+                    break
+                    
                 try:
                     # Get or create company
                     company_data = drug_data.get('company', {})
@@ -215,11 +235,13 @@ class DataSynchronizer:
                 raise
             
         # Log summary
-        logger.info(f"\nSynchronization complete:")
+        logger.info(f"\nSynchronization {'interrupted' if stats.get('interrupted') else 'complete'}:")
         logger.info(f"  - Drugs created: {stats['created']}")
         logger.info(f"  - Drugs updated: {stats['updated']}")
         logger.info(f"  - Errors: {stats['errors']}")
         logger.info(f"  - Total drugs in database: {stats['created'] + stats['updated']}")
+        if stats.get('interrupted'):
+            logger.info("  - Status: INTERRUPTED BY USER")
     
     def sync_stock_data(self, ticker: Optional[str] = None):
         """
@@ -260,6 +282,9 @@ class DataSynchronizer:
         """
         Sync both drug and stock data.
         
+        THIS METHOD IS DEPRECATED - The CLI now handles the logic directly.
+        Left here for backwards compatibility.
+        
         Args:
             force_refresh: Force refresh of BiopharmIQ data
             limit: Limit number of drugs to sync
@@ -267,9 +292,12 @@ class DataSynchronizer:
         # First sync drugs
         self.sync_drugs(force_refresh=force_refresh, limit=limit)
         
-        # Then sync stock data
-        logger.info("\nStarting stock data sync...")
-        self.sync_stock_data()
+        # Only sync stocks if drugs sync wasn't interrupted
+        if not self.interrupted:
+            logger.info("\nStarting stock data sync...")
+            self.sync_stock_data()
+        else:
+            logger.info("\nSkipping stock sync due to interruption")
     
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""
