@@ -1,7 +1,7 @@
 """BiopharmIQ API client for fetching drug and catalyst data."""
 
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 import logging
 from urllib.parse import urlparse, parse_qs
@@ -92,7 +92,7 @@ class BiopharmIQClient:
             
             if cache_entry:
                 # Check if cache is still valid
-                cache_age = datetime.utcnow() - cache_entry.last_fetched
+                cache_age = datetime.now(timezone.utc) - cache_entry.last_fetched
                 if cache_age < config.get_cache_expiry():
                     logger.info(f"Using cached data for {endpoint} (age: {cache_age})")
                     return cache_entry.response_data
@@ -130,12 +130,12 @@ class BiopharmIQClient:
             
             if cache_entry:
                 cache_entry.response_data = data
-                cache_entry.last_fetched = datetime.utcnow()
+                cache_entry.last_fetched = datetime.now(timezone.utc)
             else:
                 cache_entry = APICache(
                     endpoint=endpoint,
                     response_data=data,
-                    last_fetched=datetime.utcnow()
+                    last_fetched=datetime.now(timezone.utc)
                 )
                 db.add(cache_entry)
             
@@ -215,7 +215,7 @@ class BiopharmIQClient:
         if all_drugs:  # Only save if we got data
             complete_response = {
                 'all_results': all_drugs,
-                'fetched_at': datetime.utcnow().isoformat(),
+                'fetched_at': datetime.now(timezone.utc).isoformat(),
                 'total_count': len(all_drugs)
             }
             self._save_response_to_file(endpoint, complete_response)

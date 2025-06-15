@@ -1,6 +1,6 @@
 """Database models for the Biotech Catalyst Tool."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, DateTime, 
     Boolean, Text, ForeignKey, JSON, UniqueConstraint, Index
@@ -9,6 +9,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
 Base = declarative_base()
+
+
+def utc_now():
+    """Get current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class Company(Base):
@@ -20,8 +25,8 @@ class Company(Base):
     ticker = Column(String(10), unique=True, nullable=False, index=True)
     name = Column(Text, nullable=False)  # Company names can be long
     sector = Column(String(100))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     drugs = relationship("Drug", back_populates="company", cascade="all, delete-orphan")
@@ -69,9 +74,9 @@ class Drug(Base):
     last_update_name = Column(Text)
     
     # Tracking
-    api_last_updated = Column(DateTime, default=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    api_last_updated = Column(DateTime, default=utc_now)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     company = relationship("Company", back_populates="drugs")
@@ -111,7 +116,7 @@ class StockData(Base):
     
     # Tracking
     source = Column(String(50), default='yahoo')  # Data source
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Relationships
     company = relationship("Company", back_populates="stock_data")
@@ -143,7 +148,7 @@ class SECFiling(Base):
     parsed_content = Column(JSON)  # Flexible storage for different filing types
     
     # Tracking
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     
     # Relationships
     company = relationship("Company", back_populates="sec_filings")
@@ -165,8 +170,8 @@ class APICache(Base):
     id = Column(Integer, primary_key=True)
     endpoint = Column(String(255), unique=True, nullable=False)
     response_data = Column(JSON, nullable=False)
-    last_fetched = Column(DateTime, nullable=False, default=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    last_fetched = Column(DateTime, nullable=False, default=utc_now)
+    created_at = Column(DateTime, default=utc_now)
     
     def __repr__(self):
         return f"<APICache(endpoint='{self.endpoint}', last_fetched='{self.last_fetched}')>"

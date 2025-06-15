@@ -2,7 +2,7 @@
 
 import yfinance as yf
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 import pandas as pd
 import signal
@@ -49,7 +49,7 @@ class YahooFinanceClient:
             
         try:
             # Calculate date range
-            end_date = datetime.now()
+            end_date = datetime.now(timezone.utc)
             start_date = end_date - timedelta(days=days_back)
             
             # Fetch data

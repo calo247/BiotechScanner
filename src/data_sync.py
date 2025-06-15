@@ -1,7 +1,7 @@
 """Data synchronization module for updating database with API data."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from dateutil import parser as date_parser
 from tqdm import tqdm
@@ -201,7 +201,7 @@ class DataSynchronizer:
                         'note': drug_data.get('note', ''),
                         'market_info': drug_data.get('market', ''),
                         'last_update_name': drug_data.get('last_name_updated', ''),
-                        'api_last_updated': datetime.utcnow()
+                        'api_last_updated': datetime.now(timezone.utc)
                     }
                     
                     if drug:
