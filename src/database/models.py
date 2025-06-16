@@ -32,6 +32,7 @@ class Company(Base):
     drugs = relationship("Drug", back_populates="company", cascade="all, delete-orphan")
     stock_data = relationship("StockData", back_populates="company", cascade="all, delete-orphan")
     sec_filings = relationship("SECFiling", back_populates="company", cascade="all, delete-orphan")
+    financial_metrics = relationship("FinancialMetric", back_populates="company", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Company(ticker='{self.ticker}', name='{self.name}')>"
@@ -144,6 +145,14 @@ class SECFiling(Base):
     accession_number = Column(String(25), unique=True, nullable=False)
     filing_url = Column(String(500))
     
+    # File storage
+    file_path = Column(String(500))  # Path to compressed text file
+    file_size = Column(Integer)  # Size in bytes
+    
+    # Metadata for quick filtering
+    word_count = Column(Integer)
+    mentions_clinical_trial = Column(Boolean, default=False)
+    
     # Content (storing key sections as JSON)
     parsed_content = Column(JSON)  # Flexible storage for different filing types
     
@@ -161,6 +170,48 @@ class SECFiling(Base):
     
     def __repr__(self):
         return f"<SECFiling(ticker='{self.company.ticker if self.company else 'N/A'}', type='{self.filing_type}', date='{self.filing_date}')>"
+
+
+class FinancialMetric(Base):
+    """Financial metrics from SEC XBRL data."""
+    __tablename__ = 'financial_metrics'
+    
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    
+    # Metric identification
+    concept = Column(String(200), nullable=False)  # XBRL concept name
+    label = Column(String(500))  # Human-readable label
+    
+    # Value
+    value = Column(Float)  # Using Float to handle decimals
+    unit = Column(String(50))  # USD, shares, etc.
+    
+    # Time period
+    fiscal_year = Column(Integer)
+    fiscal_period = Column(String(10))  # FY, Q1, Q2, Q3, Q4
+    form = Column(String(20))  # 10-K, 10-Q, etc.
+    filed_date = Column(DateTime)
+    
+    # Reference
+    accession_number = Column(String(25))
+    
+    # Tracking
+    created_at = Column(DateTime, default=utc_now)
+    
+    # Relationships
+    company = relationship("Company", back_populates="financial_metrics")
+    
+    # Indexes for common queries
+    __table_args__ = (
+        Index('idx_company_concept', 'company_id', 'concept'),
+        Index('idx_fiscal_period', 'fiscal_year', 'fiscal_period'),
+        UniqueConstraint('company_id', 'concept', 'fiscal_year', 'fiscal_period', 'form', 
+                        name='_company_metric_period_uc'),
+    )
+    
+    def __repr__(self):
+        return f"<FinancialMetric(company='{self.company.ticker if self.company else 'N/A'}', concept='{self.concept}', value={self.value}, period='{self.fiscal_year}-{self.fiscal_period}')>"
 
 
 class APICache(Base):

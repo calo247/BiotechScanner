@@ -9,8 +9,9 @@ import signal
 
 from .api_clients.biopharma_client import biopharma_client
 from .api_clients.yahoo_client import yahoo_client
+from .api_clients.sec_client import sec_client
 from .database.database import get_db
-from .database.models import Company, Drug, APICache, StockData
+from .database.models import Company, Drug, APICache, StockData, SECFiling, FinancialMetric
 from .config import config
 
 # Set up logging
@@ -24,6 +25,7 @@ class DataSynchronizer:
     def __init__(self):
         self.biopharma_client = biopharma_client
         self.yahoo_client = yahoo_client
+        self.sec_client = sec_client
         self.interrupted = False
         
         # Set up signal handler for graceful shutdown
@@ -278,26 +280,42 @@ class DataSynchronizer:
             if stats.get('interrupted'):
                 logger.info("  - Status: INTERRUPTED BY USER")
     
-    def sync_all(self, force_refresh: bool = False, limit: Optional[int] = None):
+    def sync_sec_filings(self, ticker: Optional[str] = None, days_back: Optional[int] = None):
         """
-        Sync both drug and stock data.
-        
-        THIS METHOD IS DEPRECATED - The CLI now handles the logic directly.
-        Left here for backwards compatibility.
+        Synchronize SEC filings from EDGAR.
         
         Args:
-            force_refresh: Force refresh of BiopharmIQ data
-            limit: Limit number of drugs to sync
+            ticker: Specific ticker to sync, or None for all companies
+            days_back: Number of days of history to fetch
         """
-        # First sync drugs
-        self.sync_drugs(force_refresh=force_refresh, limit=limit)
+        logger.info("Starting SEC filings synchronization...")
         
-        # Only sync stocks if drugs sync wasn't interrupted
-        if not self.interrupted:
-            logger.info("\nStarting stock data sync...")
-            self.sync_stock_data()
+        if days_back is None:
+            days_back = config.SEC_DAYS_BACK
+        
+        if ticker:
+            # Sync specific company
+            with get_db() as db:
+                company = db.query(Company).filter(
+                    Company.ticker == ticker.upper()
+                ).first()
+                
+                if not company:
+                    logger.error(f"Company with ticker {ticker} not found")
+                    return
+            
+            filings = self.sec_client.update_company_filings(company, days_back)
+            logger.info(f"Added {filings} SEC filings for {ticker}")
         else:
-            logger.info("\nSkipping stock sync due to interruption")
+            # Sync all companies
+            stats = self.sec_client.update_all_companies_filings(days_back)
+            
+            logger.info(f"\nSEC sync complete:")
+            logger.info(f"  - Companies processed: {stats['companies_processed']}")
+            logger.info(f"  - Companies skipped: {stats['companies_skipped']}")
+            logger.info(f"  - Filings added: {stats['filings_added']}")
+            logger.info(f"  - Financial metrics added: {stats.get('metrics_added', 0)}")
+            logger.info(f"  - Errors: {stats['errors']}")
     
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""
@@ -321,14 +339,32 @@ class DataSynchronizer:
             stock_data_count = db.query(StockData).count()
             companies_with_stock = db.query(StockData.company_id).distinct().count()
             
+            # Count SEC filings
+            sec_filing_count = db.query(SECFiling).count()
+            companies_with_filings = db.query(SECFiling.company_id).distinct().count()
+            
+            # Count financial metrics
+            metrics_count = db.query(FinancialMetric).count()
+            
+            # Make datetimes timezone-aware if they aren't already
+            if last_sync and last_sync.tzinfo is None:
+                last_sync = last_sync.replace(tzinfo=timezone.utc)
+            
+            cache_expires = None
+            if last_sync:
+                cache_expires = last_sync + config.get_cache_expiry()
+            
             return {
                 'total_drugs': drug_count,
                 'total_companies': company_count,
                 'drugs_with_catalysts': catalyst_count,
                 'stock_data_records': stock_data_count,
                 'companies_with_stock_data': companies_with_stock,
+                'sec_filing_count': sec_filing_count,
+                'companies_with_sec_filings': companies_with_filings,
+                'financial_metrics_count': metrics_count,
                 'last_sync': last_sync,
-                'cache_expires': last_sync + config.get_cache_expiry() if last_sync else None
+                'cache_expires': cache_expires
             }
 
 

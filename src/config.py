@@ -32,8 +32,10 @@ class Config:
     # Request timeouts
     REQUEST_TIMEOUT = 30  # seconds
     
-    # Logging
-    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+    # SEC EDGAR Settings
+    SEC_USER_AGENT = os.getenv('SEC_USER_AGENT', 'BiotechScanner/1.0 (your-email@example.com)')
+    SEC_FILING_TYPES = ['10-K', '10-Q', '8-K', 'DEF 14A']  # Filing types to fetch
+    SEC_DAYS_BACK = 365  # How many days of filings to fetch
     
     @classmethod
     def get_cache_expiry(cls):

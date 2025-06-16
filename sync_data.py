@@ -51,9 +51,14 @@ def main():
         help='Limit number of drugs to sync (for testing)'
     )
     parser.add_argument(
+        '--sec',
+        action='store_true',
+        help='Sync SEC filings only'
+    )
+    parser.add_argument(
         '--ticker',
         type=str,
-        help='Sync stock data for specific ticker only (use with --stocks)'
+        help='Sync data for specific ticker only (use with --stocks or --sec)'
     )
     
     args = parser.parse_args()
@@ -62,7 +67,7 @@ def main():
     init_db()
     
     # Default behavior if no flags specified
-    if not any([args.drugs, args.stocks, args.all, args.status]):
+    if not any([args.drugs, args.stocks, args.sec, args.all, args.status]):
         args.all = True  # Default to full sync
     
     # Handle commands
@@ -75,6 +80,9 @@ def main():
         print(f"Drugs with catalysts: {status['drugs_with_catalysts']}")
         print(f"Stock data records: {status['stock_data_records']}")
         print(f"Companies with stock data: {status['companies_with_stock_data']}")
+        print(f"SEC filings: {status['sec_filing_count']}")
+        print(f"Companies with SEC filings: {status['companies_with_sec_filings']}")
+        print(f"Financial metrics: {status.get('financial_metrics_count', 0)}")
         
         if status['last_sync']:
             print(f"\nLast drug sync: {status['last_sync'].strftime('%Y-%m-%d %H:%M:%S UTC')}")
@@ -118,6 +126,17 @@ def main():
         else:
             print("Syncing stock data for all companies...")
             data_synchronizer.sync_stock_data()
+    
+    elif args.sec and not args.all:
+        # Sync SEC filings only
+        print("\n=== SEC Filings Sync ===")
+        if args.ticker:
+            print(f"Syncing SEC filings for {args.ticker}...")
+            data_synchronizer.sync_sec_filings(ticker=args.ticker)
+        else:
+            print("Syncing SEC filings for all companies...")
+            print("Note: This may take a while due to SEC rate limits")
+            data_synchronizer.sync_sec_filings()
     
     elif args.all:
         # Sync everything
