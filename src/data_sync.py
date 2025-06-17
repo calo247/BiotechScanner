@@ -11,7 +11,7 @@ from .api_clients.biopharma_client import biopharma_client
 from .api_clients.yahoo_client import yahoo_client
 from .api_clients.sec_client import sec_client
 from .database.database import get_db
-from .database.models import Company, Drug, APICache, StockData, SECFiling, FinancialMetric
+from .database.models import Company, Drug, APICache, StockData, SECFiling, FinancialMetric, HistoricalCatalyst
 from .config import config
 
 # Set up logging
@@ -317,6 +317,146 @@ class DataSynchronizer:
             logger.info(f"  - Financial metrics added: {stats.get('metrics_added', 0)}")
             logger.info(f"  - Errors: {stats['errors']}")
     
+    def sync_historical_catalysts(self, force_refresh: bool = False, limit: Optional[int] = None):
+        """
+        Synchronize historical catalyst data from BiopharmIQ premium API to database.
+        
+        Args:
+            force_refresh: If True, bypass cache and fetch fresh data
+            limit: If set, only sync this many catalysts (for testing)
+        """
+        logger.info("Starting historical catalyst synchronization...")
+        
+        # Test API connection first
+        if not self.biopharma_client.test_connection():
+            logger.error("Cannot connect to BiopharmIQ API. Check your API key.")
+            return
+        
+        # Fetch all historical catalysts
+        try:
+            catalysts_data = self.biopharma_client.get_historical_catalysts(
+                use_cache=not force_refresh,
+                limit=limit
+            )
+                
+        except Exception as e:
+            logger.error(f"Failed to fetch historical catalysts: {e}")
+            return
+        
+        logger.info(f"Processing {len(catalysts_data)} historical catalysts...")
+        logger.info("Press Ctrl+C to stop gracefully after current catalyst\n")
+        
+        # Reset interrupt flag
+        self.interrupted = False
+        
+        # Process catalysts
+        with get_db() as db:
+            stats = {
+                'created': 0,
+                'updated': 0,
+                'errors': 0,
+                'companies_not_found': 0,
+                'interrupted': False
+            }
+            
+            for catalyst_data in tqdm(catalysts_data, desc="Processing historical catalysts"):
+                if self.interrupted:
+                    stats['interrupted'] = True
+                    tqdm.write("Interrupted - finishing current catalyst...")
+                    break
+                    
+                try:
+                    # Get company by ticker
+                    ticker = catalyst_data.get('ticker', '').upper()
+                    if not ticker:
+                        logger.warning(f"Catalyst missing ticker: {catalyst_data}")
+                        stats['errors'] += 1
+                        continue
+                    
+                    company = db.query(Company).filter(
+                        Company.ticker == ticker
+                    ).first()
+                    
+                    if not company:
+                        logger.debug(f"Company not found for ticker {ticker}")
+                        stats['companies_not_found'] += 1
+                        continue
+                    
+                    # Check if catalyst exists (by unique fields since we might not have biopharma_id)
+                    catalyst_date_str = catalyst_data.get('catalyst_date')
+                    catalyst_date = None
+                    if catalyst_date_str:
+                        try:
+                            catalyst_date = datetime.strptime(catalyst_date_str, '%Y-%m-%d')
+                            catalyst_date = catalyst_date.replace(tzinfo=timezone.utc)
+                        except Exception as e:
+                            logger.warning(f"Could not parse catalyst date '{catalyst_date_str}': {e}")
+                    
+                    # Try to find existing catalyst by unique combination
+                    # Include catalyst_text in the uniqueness check since same drug can have multiple events
+                    existing = db.query(HistoricalCatalyst).filter(
+                        HistoricalCatalyst.company_id == company.id,
+                        HistoricalCatalyst.drug_name == catalyst_data.get('drug_name'),
+                        HistoricalCatalyst.drug_indication == catalyst_data.get('drug_indication'),
+                        HistoricalCatalyst.catalyst_date == catalyst_date,
+                        HistoricalCatalyst.catalyst_text == catalyst_data.get('catalyst_text', '')
+                    ).first()
+                    
+                    # Prepare catalyst data
+                    catalyst_attrs = {
+                        'company': company,
+                        'ticker': ticker,
+                        'drug_name': catalyst_data.get('drug_name', ''),
+                        'drug_indication': catalyst_data.get('drug_indication', ''),
+                        'stage': catalyst_data.get('stage', ''),
+                        'catalyst_date': catalyst_date,
+                        'catalyst_text': catalyst_data.get('catalyst_text', ''),
+                        'catalyst_source': catalyst_data.get('catalyst_source', '')
+                    }
+                    
+                    # Add biopharma_id if provided
+                    if catalyst_data.get('id'):
+                        catalyst_attrs['biopharma_id'] = catalyst_data['id']
+                    
+                    if existing:
+                        # Update existing catalyst
+                        for key, value in catalyst_attrs.items():
+                            setattr(existing, key, value)
+                        stats['updated'] += 1
+                    else:
+                        # Create new catalyst
+                        catalyst = HistoricalCatalyst(**catalyst_attrs)
+                        db.add(catalyst)
+                        stats['created'] += 1
+                    
+                    # Commit every 100 catalysts to avoid memory issues
+                    if (stats['created'] + stats['updated']) % 100 == 0:
+                        db.commit()
+                        
+                except Exception as e:
+                    logger.error(f"Error processing catalyst {catalyst_data}: {e}")
+                    stats['errors'] += 1
+                    continue
+            
+            # Final commit for any remaining catalysts
+            try:
+                db.commit()
+                logger.info("Database commit successful")
+            except Exception as e:
+                logger.error(f"Error during final commit: {e}")
+                db.rollback()
+                raise
+            
+        # Log summary
+        logger.info(f"\nHistorical catalyst sync {'interrupted' if stats.get('interrupted') else 'complete'}:")
+        logger.info(f"  - Catalysts created: {stats['created']}")
+        logger.info(f"  - Catalysts updated: {stats['updated']}")
+        logger.info(f"  - Companies not found: {stats['companies_not_found']}")
+        logger.info(f"  - Errors: {stats['errors']}")
+        logger.info(f"  - Total catalysts in database: {stats['created'] + stats['updated']}")
+        if stats.get('interrupted'):
+            logger.info("  - Status: INTERRUPTED BY USER")
+    
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""
         with get_db() as db:
@@ -346,6 +486,10 @@ class DataSynchronizer:
             # Count financial metrics
             metrics_count = db.query(FinancialMetric).count()
             
+            # Count historical catalysts
+            historical_catalyst_count = db.query(HistoricalCatalyst).count()
+            companies_with_historical = db.query(HistoricalCatalyst.company_id).distinct().count()
+            
             # Make datetimes timezone-aware if they aren't already
             if last_sync and last_sync.tzinfo is None:
                 last_sync = last_sync.replace(tzinfo=timezone.utc)
@@ -363,6 +507,8 @@ class DataSynchronizer:
                 'sec_filing_count': sec_filing_count,
                 'companies_with_sec_filings': companies_with_filings,
                 'financial_metrics_count': metrics_count,
+                'historical_catalyst_count': historical_catalyst_count,
+                'companies_with_historical_catalysts': companies_with_historical,
                 'last_sync': last_sync,
                 'cache_expires': cache_expires
             }

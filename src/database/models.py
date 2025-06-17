@@ -33,6 +33,7 @@ class Company(Base):
     stock_data = relationship("StockData", back_populates="company", cascade="all, delete-orphan")
     sec_filings = relationship("SECFiling", back_populates="company", cascade="all, delete-orphan")
     financial_metrics = relationship("FinancialMetric", back_populates="company", cascade="all, delete-orphan")
+    historical_catalysts = relationship("HistoricalCatalyst", back_populates="company", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Company(ticker='{self.ticker}', name='{self.name}')>"
@@ -212,6 +213,41 @@ class FinancialMetric(Base):
     
     def __repr__(self):
         return f"<FinancialMetric(company='{self.company.ticker if self.company else 'N/A'}', concept='{self.concept}', value={self.value}, period='{self.fiscal_year}-{self.fiscal_period}')>"
+
+
+class HistoricalCatalyst(Base):
+    """Historical catalyst events from BiopharmIQ premium API."""
+    __tablename__ = 'historical_catalysts'
+    
+    id = Column(Integer, primary_key=True)
+    biopharma_id = Column(Integer, index=True)  # ID from API if provided - not unique as multiple events can share ID
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    
+    # Catalyst information
+    ticker = Column(String(10), index=True)
+    drug_name = Column(Text)
+    drug_indication = Column(Text)
+    stage = Column(String(100), index=True)  # Phase 1, Phase 2, etc.
+    catalyst_date = Column(DateTime, index=True)
+    catalyst_text = Column(Text)  # Outcome description
+    catalyst_source = Column(Text)
+    
+    # Tracking
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+    
+    # Relationships
+    company = relationship("Company", back_populates="historical_catalysts")
+    
+    # Indexes for common queries
+    __table_args__ = (
+        Index('idx_hist_catalyst_date', 'catalyst_date'),
+        Index('idx_hist_stage', 'stage'),
+        Index('idx_hist_ticker', 'ticker'),
+    )
+    
+    def __repr__(self):
+        return f"<HistoricalCatalyst(ticker='{self.ticker}', drug='{self.drug_name}', date='{self.catalyst_date}')>"
 
 
 class APICache(Base):

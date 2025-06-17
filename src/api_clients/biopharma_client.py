@@ -91,8 +91,13 @@ class BiopharmIQClient:
             ).first()
             
             if cache_entry:
+                # Make sure last_fetched is timezone-aware
+                last_fetched = cache_entry.last_fetched
+                if last_fetched.tzinfo is None:
+                    last_fetched = last_fetched.replace(tzinfo=timezone.utc)
+                
                 # Check if cache is still valid
-                cache_age = datetime.now(timezone.utc) - cache_entry.last_fetched
+                cache_age = datetime.now(timezone.utc) - last_fetched
                 if cache_age < config.get_cache_expiry():
                     logger.info(f"Using cached data for {endpoint} (age: {cache_age})")
                     return cache_entry.response_data
@@ -251,6 +256,87 @@ class BiopharmIQClient:
         
         return data
     
+    def get_historical_catalysts(self, use_cache: bool = True, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Fetch historical catalyst events from the premium API endpoint.
+        
+        This handles pagination automatically and returns all results.
+        
+        Args:
+            use_cache: Whether to use cached data if available
+            limit: Maximum number of catalysts to fetch (None for all)
+            
+        Returns:
+            List of all historical catalyst records
+        """
+        endpoint = "/historical-catalysts/screener/"
+        
+        # Check cache first (only if we're getting all catalysts)
+        if use_cache and limit is None:
+            cached_data = self._check_cache(endpoint)
+            if cached_data and 'all_results' in cached_data:
+                return cached_data['all_results']
+        
+        all_catalysts = []
+        next_url = endpoint
+        page = 1
+        
+        # Determine page size
+        page_size = min(100, limit) if limit and limit < 100 else 100
+        
+        logger.info(f"Fetching historical catalysts from BiopharmIQ API{f' (limit: {limit})' if limit else ''}...")
+        
+        while next_url:
+            # Make request
+            if page == 1:
+                # First page - set limit
+                response = self._make_request(next_url, params={'limit': page_size})
+            else:
+                # For pagination, we need to use the full URL
+                # Extract the offset from the next URL
+                parsed_url = urlparse(next_url)
+                query_params = parse_qs(parsed_url.query)
+                params = {k: v[0] for k, v in query_params.items()}
+                response = self._make_request(endpoint, params)
+            
+            # Add results to our list
+            catalysts = response.get('results', [])
+            all_catalysts.extend(catalysts)
+            
+            logger.info(f"Fetched page {page}: {len(catalysts)} catalysts (total: {len(all_catalysts)})")
+            
+            # Check if we've reached our limit
+            if limit and len(all_catalysts) >= limit:
+                all_catalysts = all_catalysts[:limit]  # Trim to exact limit
+                logger.info(f"Reached limit of {limit} catalysts")
+                break
+            
+            # Check for next page
+            next_url = response.get('next')
+            if next_url:
+                # Extract just the path and query from the full URL
+                parsed_url = urlparse(next_url)
+                next_url = parsed_url.path + ('?' + parsed_url.query if parsed_url.query else '')
+            
+            page += 1
+        
+        logger.info(f"Fetched total of {len(all_catalysts)} historical catalysts")
+        
+        # Save the complete response to file
+        if all_catalysts:  # Only save if we got data
+            complete_response = {
+                'all_results': all_catalysts,
+                'fetched_at': datetime.now(timezone.utc).isoformat(),
+                'total_count': len(all_catalysts)
+            }
+            self._save_response_to_file(endpoint, complete_response)
+        
+        # Cache all results only if we fetched everything
+        if use_cache and limit is None:
+            self._update_cache(endpoint, {'all_results': all_catalysts})
+        
+        return all_catalysts
+
     def test_connection(self) -> bool:
         """
         Test the API connection and authentication.

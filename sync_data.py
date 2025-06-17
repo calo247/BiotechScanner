@@ -56,6 +56,11 @@ def main():
         help='Sync SEC filings only'
     )
     parser.add_argument(
+        '--historical',
+        action='store_true',
+        help='Sync historical catalyst data (premium API)'
+    )
+    parser.add_argument(
         '--ticker',
         type=str,
         help='Sync data for specific ticker only (use with --stocks or --sec)'
@@ -67,7 +72,7 @@ def main():
     init_db()
     
     # Default behavior if no flags specified
-    if not any([args.drugs, args.stocks, args.sec, args.all, args.status]):
+    if not any([args.drugs, args.stocks, args.sec, args.historical, args.all, args.status]):
         args.all = True  # Default to full sync
     
     # Handle commands
@@ -83,6 +88,8 @@ def main():
         print(f"SEC filings: {status['sec_filing_count']}")
         print(f"Companies with SEC filings: {status['companies_with_sec_filings']}")
         print(f"Financial metrics: {status.get('financial_metrics_count', 0)}")
+        print(f"Historical catalysts: {status.get('historical_catalyst_count', 0)}")
+        print(f"Companies with historical catalysts: {status.get('companies_with_historical_catalysts', 0)}")
         
         if status['last_sync']:
             print(f"\nLast drug sync: {status['last_sync'].strftime('%Y-%m-%d %H:%M:%S UTC')}")
@@ -137,6 +144,15 @@ def main():
             print("Syncing SEC filings for all companies...")
             print("Note: This may take a while due to SEC rate limits")
             data_synchronizer.sync_sec_filings()
+    
+    elif args.historical and not args.all:
+        # Sync historical catalysts only
+        print("\n=== Historical Catalyst Sync (Premium API) ===")
+        print(f"Force refresh: {args.force}")
+        if args.limit:
+            print(f"Limiting to {args.limit} catalysts")
+        
+        data_synchronizer.sync_historical_catalysts(force_refresh=args.force, limit=args.limit)
     
     elif args.all:
         # Sync everything
