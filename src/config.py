@@ -16,6 +16,10 @@ class Config:
     if not BIOPHARMA_API_KEY:
         raise ValueError("BIOPHARMA_API_KEY environment variable is required")
     
+    POLYGON_API_KEY = os.getenv('POLYGON_API_KEY')
+    if not POLYGON_API_KEY:
+        raise ValueError("POLYGON_API_KEY environment variable is required")
+    
     # Database
     DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/catalyst.db')
     
@@ -26,8 +30,14 @@ class Config:
     # Yahoo Finance Settings
     YAHOO_BATCH_SIZE = 50  # Number of tickers to fetch at once
     
+    # Polygon.io Settings
+    POLYGON_BASE_URL = "https://api.polygon.io"
+    POLYGON_BATCH_SIZE = 100  # Increased batch size for premium tier
+    POLYGON_RATE_LIMIT_DELAY = 0  # No rate limit for premium tier
+    
     # Data Update Settings
-    STOCK_DATA_DAYS_BACK = 30  # How many days of historical data to fetch
+    STOCK_DATA_DAYS_BACK = 30  # Default for updates
+    STOCK_DATA_INITIAL_YEARS = 5  # Years of history for initial load
     
     # Request timeouts
     REQUEST_TIMEOUT = 30  # seconds

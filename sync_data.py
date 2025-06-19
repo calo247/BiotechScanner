@@ -65,6 +65,11 @@ def main():
         type=str,
         help='Sync data for specific ticker only (use with --stocks or --sec)'
     )
+    parser.add_argument(
+        '--initial',
+        action='store_true',
+        help='Perform initial load with full historical data (use with --stocks)'
+    )
     
     args = parser.parse_args()
     
@@ -127,12 +132,17 @@ def main():
     elif args.stocks and not args.all:
         # Sync stock data only
         print("\n=== Stock Data Sync ===")
+        if args.initial:
+            print("Mode: INITIAL LOAD (5 years of historical data)")
+        else:
+            print("Mode: INCREMENTAL UPDATE")
+            
         if args.ticker:
             print(f"Syncing stock data for {args.ticker}...")
-            data_synchronizer.sync_stock_data(ticker=args.ticker)
+            data_synchronizer.sync_stock_data(ticker=args.ticker, initial_load=args.initial)
         else:
             print("Syncing stock data for all companies...")
-            data_synchronizer.sync_stock_data()
+            data_synchronizer.sync_stock_data(initial_load=args.initial)
     
     elif args.sec and not args.all:
         # Sync SEC filings only

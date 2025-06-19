@@ -8,7 +8,7 @@ from tqdm import tqdm
 import signal
 
 from .api_clients.biopharma_client import biopharma_client
-from .api_clients.yahoo_client import yahoo_client
+from .api_clients.polygon_client import polygon_client
 from .api_clients.sec_client import sec_client
 from .database.database import get_db
 from .database.models import Company, Drug, APICache, StockData, SECFiling, FinancialMetric, HistoricalCatalyst
@@ -24,7 +24,7 @@ class DataSynchronizer:
     
     def __init__(self):
         self.biopharma_client = biopharma_client
-        self.yahoo_client = yahoo_client
+        self.polygon_client = polygon_client
         self.sec_client = sec_client
         self.interrupted = False
         
@@ -245,14 +245,15 @@ class DataSynchronizer:
         if stats.get('interrupted'):
             logger.info("  - Status: INTERRUPTED BY USER")
     
-    def sync_stock_data(self, ticker: Optional[str] = None):
+    def sync_stock_data(self, ticker: Optional[str] = None, initial_load: bool = False):
         """
-        Synchronize stock data from Yahoo Finance.
+        Synchronize stock data from Polygon.io.
         
         Args:
             ticker: Specific ticker to sync, or None for all companies
+            initial_load: If True, fetch full historical data (5 years)
         """
-        logger.info("Starting stock data synchronization...")
+        logger.info(f"Starting stock data synchronization{'(initial load - 5 years)' if initial_load else '(incremental update)'}...")
         
         if ticker:
             # Sync specific company
@@ -266,11 +267,11 @@ class DataSynchronizer:
                     return
                 
                 company_id, ticker = company
-                records = self.yahoo_client.update_company_stock_data(company_id, ticker)
+                records = self.polygon_client.update_company_stock_data(company_id, ticker, initial_load=initial_load)
                 logger.info(f"Added {records} stock records for {ticker}")
         else:
             # Sync all companies
-            stats = self.yahoo_client.update_all_companies_stock_data()
+            stats = self.polygon_client.update_all_companies_stock_data(initial_load=initial_load)
             
             logger.info(f"\nStock sync complete:")
             logger.info(f"  - Companies processed: {stats['companies_processed']}")
