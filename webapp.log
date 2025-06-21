@@ -1,0 +1,329 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5678
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 10:24:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:24:11] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:24:11] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:24:11] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+/home/tyler/BiotechScanner/webapp/app.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow().date()
+/home/tyler/BiotechScanner/webapp/app.py:193: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow().date()
+127.0.0.1 - - [21/Jun/2025 10:24:11] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:24:11] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+/home/tyler/BiotechScanner/webapp/app.py:139: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  start_date = datetime.utcnow() - timedelta(days=days_back)
+127.0.0.1 - - [21/Jun/2025 10:24:35] "GET /api/catalysts/historical?days=90&stage=&ticker=&page=1&per_page=20 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 10:25:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:04] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:04] "GET /static/script.js HTTP/1.1" 200 -
+/home/tyler/BiotechScanner/webapp/app.py:193: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  today = datetime.utcnow().date()
+127.0.0.1 - - [21/Jun/2025 10:25:05] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:05] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:05] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 10:25:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:11] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:11] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:11] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:23] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:23] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:23] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:23] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:24] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:24] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:24] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:24] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:27] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:27] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:25:27] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:27] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:25:35] "GET /api/catalysts/upcoming?days=90&stage=Phase+3&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:08] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:30] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:30] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:30] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:31] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:31] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:31] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:26:41] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:41] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:41] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:41] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:26:41] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:28] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:28:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:31] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:31] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:31] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:31] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:33] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:33] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:33] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:33] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:40] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:40] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:40] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:40] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:43] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:43] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:28:43] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:28:43] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:29:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:29:08] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:29:08] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:29:08] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:29:08] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=12 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:29:08] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:30:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:30:20] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:30:20] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:30:20] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:30:20] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:23] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:23] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:23] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:23] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:27] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:31:34] "GET /api/catalysts/upcoming?days=90&stage=&page=2&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:36] "GET /api/catalysts/upcoming?days=90&stage=&page=3&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:38] "GET /api/catalysts/upcoming?days=90&stage=&page=2&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:40] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:31:52] "GET /api/catalysts/historical?days=90&stage=&ticker=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:33:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:33:59] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:33:59] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:33:59] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:33:59] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:34:11] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:35:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:35:52] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:35:52] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:35:52] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:35:52] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:36:13] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:37:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:40] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:37:40] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:40] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:40] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:37:57] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:38:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:37] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:37] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:37] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:37] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:50] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:50] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:50] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:51] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:51] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:38:51] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:40:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:42:46] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:42:46] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:42:46] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:42:46] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:42:46] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:53] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:53] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:43:53] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:53] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:53] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:55] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:43:55] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:43:55] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:55] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:56] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:43:56] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:43:56] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:43:56] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:21] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:21] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:21] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:21] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:27] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:45:27] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:27] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:27] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:37] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:45:37] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:45:37] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:37] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:49] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:49] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:45:49] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:45:49] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:45:49] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:46:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:46:48] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:46:48] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:46:48] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:46:48] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:48:54] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:48:54] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:48:54] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:48:54] "GET /api/stats HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:48:54] "GET /api/catalysts/upcoming?days=90&stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:49] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:49] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:49] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:55] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:55] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:55] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:55] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 10:49:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:57] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:57] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:58] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:49:59] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:59] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:49:59] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:00] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:00] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:00] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:01] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:01] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:01] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:02] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:02] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:02] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 10:50:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:20] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:20] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:20] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:44] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:50:44] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:50:44] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:26] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:26] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:26] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:50] "GET /api/catalysts/upcoming?stage=&page=2&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:51:54] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:52:14] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:52:14] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:52:14] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:52:14] "GET /api/catalysts/upcoming?stage=&page=1&per_page=25 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 10:54:30] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:30] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:54:30] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:30] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:32] "GET /api/catalysts/upcoming?stage=&search=e&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:32] "GET /api/catalysts/upcoming?stage=&search=ew&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:33] "GET /api/catalysts/upcoming?stage=&search=ewt&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:33] "GET /api/catalysts/upcoming?stage=&search=ewtx&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:42] "GET /api/catalysts/upcoming?stage=&search=ewt&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:43] "GET /api/catalysts/upcoming?stage=&search=ew&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:43] "GET /api/catalysts/upcoming?stage=&search=e&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:43] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:44] "GET /api/catalysts/upcoming?stage=&search=e&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:44] "GET /api/catalysts/upcoming?stage=&search=ew&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:45] "GET /api/catalysts/upcoming?stage=&search=ewt&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:45] "GET /api/catalysts/upcoming?stage=&search=ewtx&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:46] "GET /api/catalysts/upcoming?stage=&search=ewt&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:46] "GET /api/catalysts/upcoming?stage=&search=ew&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:46] "GET /api/catalysts/upcoming?stage=&search=e&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:46] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:47] "GET /api/catalysts/upcoming?stage=&search=p&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:48] "GET /api/catalysts/upcoming?stage=&search=ph&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:48] "GET /api/catalysts/upcoming?stage=&search=pha&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:48] "GET /api/catalysts/upcoming?stage=&search=phas&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:48] "GET /api/catalysts/upcoming?stage=&search=phase&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:48] "GET /api/catalysts/upcoming?stage=&search=phase+&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:49] "GET /api/catalysts/upcoming?stage=&search=phase+2&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:50] "GET /api/catalysts/upcoming?stage=&search=phase+&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:50] "GET /api/catalysts/upcoming?stage=&search=phase&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:51] "GET /api/catalysts/upcoming?stage=&search=phas&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:51] "GET /api/catalysts/upcoming?stage=&search=pha&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:51] "GET /api/catalysts/upcoming?stage=&search=ph&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:51] "GET /api/catalysts/upcoming?stage=&search=p&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:54:51] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:55:35] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:55:35] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:55:35] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:55:35] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:56:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:56:36] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:56:36] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 10:56:36] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:56:41] "GET /api/catalysts/upcoming?stage=Phase+3&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:56:43] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -

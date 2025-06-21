@@ -1,0 +1,237 @@
+"""Flask web application for BiotechScanner catalyst viewer."""
+
+from flask import Flask, render_template, jsonify, request
+from flask_cors import CORS
+from datetime import datetime, timedelta, timezone
+import os
+import sys
+
+# Add parent directory to path to import src modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.database.database import get_db
+from src.database.models import Drug, Company, StockData, HistoricalCatalyst
+from sqlalchemy import and_, or_, func
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for API access
+
+@app.route('/')
+def index():
+    """Serve the main page."""
+    return render_template('index.html')
+
+@app.route('/api/catalysts/upcoming', methods=['GET'])
+def get_upcoming_catalysts():
+    """Get upcoming catalyst events."""
+    # Get query parameters
+    stage_filter = request.args.get('stage', '')
+    search_term = request.args.get('search', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+    
+    with get_db() as db:
+        # Base query - drugs with catalysts
+        query = db.query(Drug).join(Company).filter(
+            Drug.has_catalyst == True,
+            Drug.catalyst_date.isnot(None)
+        )
+        
+        # Filter by date - only show future catalysts
+        today = datetime.now(timezone.utc).date()
+        query = query.filter(
+            func.date(Drug.catalyst_date) >= today
+        )
+        
+        # Filter by stage if provided
+        if stage_filter:
+            query = query.filter(Drug.stage.like(f'%{stage_filter}%'))
+        
+        # Filter by search term if provided
+        if search_term:
+            search_pattern = f'%{search_term}%'
+            query = query.filter(
+                or_(
+                    Company.ticker.ilike(search_pattern),
+                    Company.name.ilike(search_pattern),
+                    Drug.drug_name.ilike(search_pattern),
+                    Drug.stage.ilike(search_pattern),
+                    Drug.mechanism_of_action.ilike(search_pattern),
+                    Drug.note.ilike(search_pattern)
+                )
+            )
+        
+        # Order by catalyst date
+        query = query.order_by(Drug.catalyst_date.asc())
+        
+        # Get total count
+        total = query.count()
+        
+        # Paginate
+        offset = (page - 1) * per_page
+        drugs = query.offset(offset).limit(per_page).all()
+        
+        # Get latest stock data for each company
+        company_ids = [drug.company_id for drug in drugs]
+        latest_prices = {}
+        
+        if company_ids:
+            # Subquery to get latest date for each company
+            subq = db.query(
+                StockData.company_id,
+                func.max(StockData.date).label('max_date')
+            ).filter(
+                StockData.company_id.in_(company_ids)
+            ).group_by(StockData.company_id).subquery()
+            
+            # Get the actual stock data for latest dates
+            stock_data = db.query(StockData).join(
+                subq,
+                and_(
+                    StockData.company_id == subq.c.company_id,
+                    StockData.date == subq.c.max_date
+                )
+            ).all()
+            
+            for sd in stock_data:
+                latest_prices[sd.company_id] = {
+                    'close': sd.close,
+                    'market_cap': sd.market_cap,
+                    'date': sd.date.isoformat() if sd.date else None
+                }
+        
+        # Format response
+        results = []
+        for drug in drugs:
+            company_price_data = latest_prices.get(drug.company_id, {})
+            
+            results.append({
+                'id': drug.id,
+                'drug_name': drug.drug_name,
+                'company': {
+                    'ticker': drug.company.ticker,
+                    'name': drug.company.name,
+                    'market_cap': company_price_data.get('market_cap'),
+                    'stock_price': company_price_data.get('close'),
+                    'price_date': company_price_data.get('date')
+                },
+                'stage': drug.stage,
+                'catalyst_date': drug.catalyst_date.isoformat() if drug.catalyst_date else None,
+                'catalyst_date_text': drug.catalyst_date_text,
+                'indications': drug.indications or [],
+                'mechanism_of_action': drug.mechanism_of_action,
+                'note': drug.note,
+                'market_info': drug.market_info
+            })
+        
+        return jsonify({
+            'results': results,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+
+@app.route('/api/catalysts/historical', methods=['GET'])
+def get_historical_catalysts():
+    """Get historical catalyst events."""
+    # Get query parameters
+    days_back = int(request.args.get('days', 90))
+    stage_filter = request.args.get('stage', '')
+    ticker_filter = request.args.get('ticker', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))
+    
+    with get_db() as db:
+        # Base query
+        query = db.query(HistoricalCatalyst).join(Company)
+        
+        # Filter by date range
+        if days_back > 0:
+            start_date = datetime.now(timezone.utc) - timedelta(days=days_back)
+            query = query.filter(HistoricalCatalyst.catalyst_date >= start_date)
+        
+        # Filter by stage if provided
+        if stage_filter:
+            query = query.filter(HistoricalCatalyst.stage.like(f'%{stage_filter}%'))
+        
+        # Filter by ticker if provided
+        if ticker_filter:
+            query = query.filter(HistoricalCatalyst.ticker == ticker_filter.upper())
+        
+        # Order by catalyst date descending (most recent first)
+        query = query.order_by(HistoricalCatalyst.catalyst_date.desc())
+        
+        # Get total count
+        total = query.count()
+        
+        # Paginate
+        offset = (page - 1) * per_page
+        catalysts = query.offset(offset).limit(per_page).all()
+        
+        # Format response
+        results = []
+        for catalyst in catalysts:
+            results.append({
+                'id': catalyst.id,
+                'ticker': catalyst.ticker,
+                'company_name': catalyst.company.name,
+                'drug_name': catalyst.drug_name,
+                'drug_indication': catalyst.drug_indication,
+                'stage': catalyst.stage,
+                'catalyst_date': catalyst.catalyst_date.isoformat() if catalyst.catalyst_date else None,
+                'catalyst_text': catalyst.catalyst_text,
+                'catalyst_source': catalyst.catalyst_source
+            })
+        
+        return jsonify({
+            'results': results,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total + per_page - 1) // per_page
+        })
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get database statistics."""
+    with get_db() as db:
+        # Get counts
+        total_drugs = db.query(Drug).count()
+        drugs_with_catalysts = db.query(Drug).filter(Drug.has_catalyst == True).count()
+        total_companies = db.query(Company).count()
+        
+        # Get upcoming catalysts count (next 90 days)
+        today = datetime.now(timezone.utc).date()
+        end_date = today + timedelta(days=90)
+        upcoming_catalysts = db.query(Drug).filter(
+            Drug.has_catalyst == True,
+            Drug.catalyst_date.isnot(None),
+            func.date(Drug.catalyst_date) >= today,
+            func.date(Drug.catalyst_date) <= end_date
+        ).count()
+        
+        # Stage distribution for upcoming catalysts
+        stage_dist = db.query(
+            Drug.stage,
+            func.count(Drug.id).label('count')
+        ).filter(
+            Drug.has_catalyst == True,
+            Drug.catalyst_date.isnot(None),
+            func.date(Drug.catalyst_date) >= today,
+            func.date(Drug.catalyst_date) <= end_date
+        ).group_by(Drug.stage).all()
+        
+        return jsonify({
+            'total_drugs': total_drugs,
+            'drugs_with_catalysts': drugs_with_catalysts,
+            'total_companies': total_companies,
+            'upcoming_catalysts_90d': upcoming_catalysts,
+            'stage_distribution': [
+                {'stage': stage, 'count': count} 
+                for stage, count in stage_dist
+            ]
+        })
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5678)

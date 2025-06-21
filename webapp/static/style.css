@@ -1,0 +1,361 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: #f0f4f8;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.stat-item strong {
+    color: #2c3e50;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tab-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.tab-button.active {
+    background: #3498db;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Filters */
+.filters {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #666;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.search-group input {
+    min-width: 250px;
+}
+
+.search-group {
+    margin-left: auto;
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+/* Table Styles */
+.catalyst-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.catalyst-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.catalyst-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+}
+
+.catalyst-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.catalyst-table th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+.sort-icon {
+    font-size: 12px;
+    color: #999;
+    margin-left: 4px;
+}
+
+.catalyst-table th.sorted-asc .sort-icon {
+    content: '↑';
+    color: #3498db;
+}
+
+.catalyst-table th.sorted-desc .sort-icon {
+    content: '↓';
+    color: #3498db;
+}
+
+.catalyst-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.catalyst-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.catalyst-table td {
+    padding: 12px 16px;
+    color: #333;
+}
+
+.catalyst-table .ticker {
+    font-weight: 600;
+    color: #3498db;
+    cursor: pointer;
+}
+
+.catalyst-table .ticker:hover {
+    text-decoration: underline;
+}
+
+.catalyst-table .date-cell {
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.catalyst-table .date-soon {
+    color: #e74c3c;
+}
+
+.catalyst-table .date-medium {
+    color: #e67e22;
+}
+
+.catalyst-table .date-later {
+    color: #3498db;
+}
+
+.stage-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #ecf0f1;
+    color: #2c3e50;
+}
+
+.stage-badge.phase-3 {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stage-badge.phase-2 {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stage-badge.phase-1 {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Outcome cell styling */
+.outcome-cell {
+    font-size: 13px;
+    max-width: 300px;
+    line-height: 1.4;
+}
+
+/* Market cap formatting */
+.market-cap {
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Price formatting */
+.price {
+    white-space: nowrap;
+    text-align: right;
+    font-weight: 500;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+/* Note rows */
+.note-row {
+    background-color: inherit;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.note-row td {
+    padding: 8px 16px 12px 16px;
+    border-top: 1px solid #f1f3f4;
+    background-color: #fafbfc;
+}
+
+.note-content {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #5a6c7d;
+    margin: 0;
+}
+
+/* Loading and Pagination */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination button {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pagination .page-info {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .catalyst-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        width: 100%;
+    }
+}

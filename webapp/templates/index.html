@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiotechScanner - Catalyst Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BiotechScanner Catalyst Tracker</h1>
+        </header>
+
+
+        <div id="upcoming" class="tab-content active">
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="stage-filter">Stage:</label>
+                    <select id="stage-filter" onchange="loadUpcomingCatalysts()">
+                        <option value="">All Stages</option>
+                        <option value="Phase 1">Phase 1</option>
+                        <option value="Phase 2">Phase 2</option>
+                        <option value="Phase 3">Phase 3</option>
+                        <option value="Approved">Approved</option>
+                        <option value="NDA">NDA/BLA</option>
+                    </select>
+                </div>
+                <div class="filter-group search-group">
+                    <input type="text" id="search-filter" placeholder="Search" oninput="filterTable()">
+                </div>
+            </div>
+
+            <div id="upcoming-loading" class="loading">Loading catalysts...</div>
+            <div id="upcoming-content" class="table-container">
+                <table class="catalyst-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="date">Date <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="ticker">Ticker <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="company">Company <span class="sort-icon">↕</span></th>
+                            <th>Drug</th>
+                            <th class="sortable" data-sort="stage">Stage <span class="sort-icon">↕</span></th>
+                            <th>Indication</th>
+                            <th class="sortable" data-sort="marketcap">Market Cap <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="price">Price <span class="sort-icon">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcoming-tbody">
+                        <!-- Table rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="upcoming-pagination" class="pagination"></div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
