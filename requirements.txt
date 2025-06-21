@@ -5,6 +5,10 @@ requests>=2.31.0
 yfinance>=0.2.33
 pandas>=2.1.4
 
+# Web framework
+flask>=3.0.0
+flask-cors>=4.0.0
+
 # Development dependencies
 pytest>=7.4.3
 black>=23.12.0
