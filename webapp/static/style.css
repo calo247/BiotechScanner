@@ -212,18 +212,11 @@ h1 {
 .catalyst-table .date-cell {
     white-space: nowrap;
     font-weight: 500;
+    color: #333;
 }
 
-.catalyst-table .date-soon {
-    color: #e74c3c;
-}
-
-.catalyst-table .date-medium {
-    color: #e67e22;
-}
-
-.catalyst-table .date-later {
-    color: #3498db;
+.catalyst-table .stage-cell {
+    white-space: nowrap;
 }
 
 .stage-badge {
@@ -234,6 +227,7 @@ h1 {
     font-weight: 500;
     background: #ecf0f1;
     color: #2c3e50;
+    white-space: nowrap;
 }
 
 .stage-badge.phase-3 {

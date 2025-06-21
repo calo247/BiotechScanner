@@ -327,3 +327,92 @@
 127.0.0.1 - - [21/Jun/2025 10:56:36] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
 127.0.0.1 - - [21/Jun/2025 10:56:41] "GET /api/catalysts/upcoming?stage=Phase+3&search=&page=1&per_page=25 HTTP/1.1" 200 -
 127.0.0.1 - - [21/Jun/2025 10:56:43] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:44] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:44] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:44] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:59] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:59] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:59] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 10:58:59] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 11:00:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:00:00] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:00:00] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:00:00] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:00:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:00:28] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:00:28] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:00:28] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:01:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:01:28] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:01:28] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:01:28] "GET /api/catalysts/upcoming?stage=&search=&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:01:28] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 11:03:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:03:59] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:03:59] "GET /static/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:03:59] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:05] "GET /api/catalysts/upcoming?stage=&search=&sort_by=company&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:12] "GET /api/catalysts/upcoming?stage=&search=&sort_by=company&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:18] "GET /api/catalysts/upcoming?stage=&search=&sort_by=company&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:19] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:20] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:22] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:24] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:25] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:29] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:30] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:30] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:04:31] "GET /api/catalysts/upcoming?stage=&search=&sort_by=company&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:03] "GET /api/catalysts/upcoming?stage=&search=&sort_by=stage&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:07] "GET /api/catalysts/upcoming?stage=&search=&sort_by=stage&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:08] "GET /api/catalysts/upcoming?stage=&search=&sort_by=stage&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:11] "GET /api/catalysts/upcoming?stage=&search=&sort_by=stage&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:13] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:22] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:24] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:26] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:27] "GET /api/catalysts/upcoming?stage=&search=&sort_by=price&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:28] "GET /api/catalysts/upcoming?stage=&search=&sort_by=price&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:36] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:37] "GET /api/catalysts/upcoming?stage=&search=&sort_by=ticker&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:38] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:39] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:05:40] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:06:13] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:06:14] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:06:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:06:26] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:06:26] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:06:26] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 11:06:26] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 11:07:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:29] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:07:29] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 11:07:29] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:32] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:35] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:37] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:39] "GET /api/catalysts/upcoming?stage=&search=&sort_by=price&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:46] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:47] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:07:48] "GET /api/catalysts/upcoming?stage=&search=&sort_by=marketcap&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:08:01] "GET /api/catalysts/upcoming?stage=&search=&sort_by=price&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 11:08:02] "GET /api/catalysts/upcoming?stage=&search=&sort_by=price&sort_dir=desc&page=1&per_page=25 HTTP/1.1" 200 -

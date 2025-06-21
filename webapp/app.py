@@ -27,6 +27,8 @@ def get_upcoming_catalysts():
     # Get query parameters
     stage_filter = request.args.get('stage', '')
     search_term = request.args.get('search', '')
+    sort_by = request.args.get('sort_by', 'date')
+    sort_dir = request.args.get('sort_dir', 'asc')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))
     
@@ -61,8 +63,58 @@ def get_upcoming_catalysts():
                 )
             )
         
-        # Order by catalyst date
-        query = query.order_by(Drug.catalyst_date.asc())
+        # Apply sorting
+        if sort_by == 'date':
+            sort_column = Drug.catalyst_date
+        elif sort_by == 'ticker':
+            sort_column = Company.ticker
+        elif sort_by == 'company':
+            sort_column = Company.name
+        elif sort_by == 'stage':
+            sort_column = Drug.stage
+        elif sort_by == 'marketcap':
+            # Join with latest stock data for market cap sorting
+            latest_stock_subq = db.query(
+                StockData.company_id,
+                func.max(StockData.date).label('max_date')
+            ).group_by(StockData.company_id).subquery()
+            
+            query = query.outerjoin(
+                latest_stock_subq,
+                Drug.company_id == latest_stock_subq.c.company_id
+            ).outerjoin(
+                StockData,
+                and_(
+                    StockData.company_id == latest_stock_subq.c.company_id,
+                    StockData.date == latest_stock_subq.c.max_date
+                )
+            )
+            sort_column = StockData.market_cap
+        elif sort_by == 'price':
+            # Join with latest stock data for price sorting
+            latest_stock_subq = db.query(
+                StockData.company_id,
+                func.max(StockData.date).label('max_date')
+            ).group_by(StockData.company_id).subquery()
+            
+            query = query.outerjoin(
+                latest_stock_subq,
+                Drug.company_id == latest_stock_subq.c.company_id
+            ).outerjoin(
+                StockData,
+                and_(
+                    StockData.company_id == latest_stock_subq.c.company_id,
+                    StockData.date == latest_stock_subq.c.max_date
+                )
+            )
+            sort_column = StockData.close
+        else:
+            sort_column = Drug.catalyst_date
+        
+        if sort_dir == 'desc':
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
         
         # Get total count
         total = query.count()

@@ -22,6 +22,8 @@ async function loadUpcomingCatalysts(page = 1) {
         const params = new URLSearchParams({
             stage: stageFilter,
             search: searchTerm,
+            sort_by: sortState.column,
+            sort_dir: sortState.direction,
             page: page,
             per_page: 25
         });
@@ -30,7 +32,7 @@ async function loadUpcomingCatalysts(page = 1) {
         const data = await response.json();
         
         currentData = data.results;
-        displayUpcomingCatalysts(sortData(data.results, sortState));
+        displayUpcomingCatalysts(data.results);
         updatePagination(page, data.total_pages);
         currentPage = page;
         
@@ -53,8 +55,6 @@ function displayUpcomingCatalysts(catalysts) {
     }
     
     tbody.innerHTML = catalysts.map(catalyst => {
-        const daysUntil = getDaysUntil(catalyst.catalyst_date);
-        const dateClass = daysUntil <= 30 ? 'date-soon' : daysUntil <= 60 ? 'date-medium' : 'date-later';
         const stageClass = catalyst.stage.toLowerCase().replace(/\s+/g, '-');
         
         // Extract first indication
@@ -64,13 +64,16 @@ function displayUpcomingCatalysts(catalysts) {
             indication = typeof ind === 'string' ? ind : ind.indication_name || ind.name || '';
         }
         
+        // Use catalyst_date_text or fallback to formatted date
+        const displayDate = catalyst.catalyst_date_text || formatDate(catalyst.catalyst_date);
+        
         return `
             <tr>
-                <td class="date-cell ${dateClass}">${formatDate(catalyst.catalyst_date)}</td>
+                <td class="date-cell">${escapeHtml(displayDate)}</td>
                 <td><span class="ticker">${escapeHtml(catalyst.company.ticker)}</span></td>
                 <td>${escapeHtml(catalyst.company.name)}</td>
                 <td>${escapeHtml(catalyst.drug_name)}</td>
-                <td><span class="stage-badge ${stageClass}">${catalyst.stage}</span></td>
+                <td class="stage-cell"><span class="stage-badge ${stageClass}">${catalyst.stage}</span></td>
                 <td>${escapeHtml(indication)}</td>
                 <td class="market-cap">${formatMarketCap(catalyst.company.market_cap)}</td>
                 <td class="price">${catalyst.company.stock_price ? '$' + catalyst.company.stock_price.toFixed(2) : 'N/A'}</td>
@@ -215,8 +218,9 @@ function setupSortHandlers() {
             // Update UI
             updateSortIndicators();
             
-            // Re-display sorted data
-            displayUpcomingCatalysts(sortData(currentData, sortState));
+            // Reset to page 1 when sorting and reload data
+            currentPage = 1;
+            loadUpcomingCatalysts(1);
         });
     });
 }
