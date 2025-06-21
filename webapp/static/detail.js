@@ -35,7 +35,7 @@ function displayCatalystDetail(catalyst) {
     let indicationsHtml = '';
     if (catalyst.indications && catalyst.indications.length > 0) {
         indicationsHtml = catalyst.indications.map(ind => {
-            const name = typeof ind === 'string' ? ind : (ind.indication_name || ind.name || 'Unknown');
+            const name = typeof ind === 'string' ? ind : (ind.title || ind.indication_name || ind.name || 'Unknown');
             return `<span class="indication-tag">${escapeHtml(name)}</span>`;
         }).join('');
     } else if (catalyst.indications_text) {
