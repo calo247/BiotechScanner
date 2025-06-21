@@ -1,6 +1,6 @@
 """Database models for the Biotech Catalyst Tool."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, DateTime, 
     Boolean, Text, ForeignKey, JSON, UniqueConstraint, Index
@@ -12,8 +12,8 @@ Base = declarative_base()
 
 
 def utc_now():
-    """Get current UTC time as timezone-aware datetime."""
-    return datetime.now(timezone.utc)
+    """Get current UTC time as timezone-naive datetime."""
+    return datetime.utcnow()
 
 
 class Company(Base):
@@ -24,7 +24,6 @@ class Company(Base):
     biopharma_id = Column(Integer, unique=True, index=True)  # BiopharmIQ's company ID
     ticker = Column(String(10), unique=True, nullable=False, index=True)
     name = Column(Text, nullable=False)  # Company names can be long
-    sector = Column(String(100))
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
@@ -58,17 +57,12 @@ class Drug(Base):
     # Stage and event
     stage = Column(String(100))  # This is probably fine with a limit
     stage_event_label = Column(Text)  # No length limit
-    event_score = Column(Integer)  # Score from API
     
     # Catalyst information
     catalyst_date = Column(DateTime)
     catalyst_date_text = Column(String(100))  # This is probably fine with a limit
     has_catalyst = Column(Boolean, default=False)
     catalyst_source = Column(Text)  # URLs can be long
-    
-    # Analysis flags
-    is_big_mover = Column(Boolean, default=False)
-    is_suspected_mover = Column(Boolean, default=False)
     
     # Additional data
     note = Column(Text)
@@ -106,8 +100,7 @@ class StockData(Base):
     open = Column(Float)
     high = Column(Float)
     low = Column(Float)
-    close = Column(Float, nullable=False)
-    adjusted_close = Column(Float)
+    close = Column(Float, nullable=False)  # Stores adjusted close price
     volume = Column(Integer)
     
     # Additional metrics
@@ -198,7 +191,7 @@ class FinancialMetric(Base):
     accession_number = Column(String(25))
     
     # Tracking
-    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     company = relationship("Company", back_populates="financial_metrics")
@@ -233,7 +226,6 @@ class HistoricalCatalyst(Base):
     catalyst_source = Column(Text)
     
     # Tracking
-    created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
@@ -258,7 +250,6 @@ class APICache(Base):
     endpoint = Column(String(255), unique=True, nullable=False)
     response_data = Column(JSON, nullable=False)
     last_fetched = Column(DateTime, nullable=False, default=utc_now)
-    created_at = Column(DateTime, default=utc_now)
     
     def __repr__(self):
         return f"<APICache(endpoint='{self.endpoint}', last_fetched='{self.last_fetched}')>"

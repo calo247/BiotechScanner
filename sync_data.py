@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from src.database.database import init_db
 from src.data_sync import data_synchronizer
@@ -100,8 +100,8 @@ def main():
             print(f"\nLast drug sync: {status['last_sync'].strftime('%Y-%m-%d %H:%M:%S UTC')}")
             
             # Check if cache is still valid
-            if status['cache_expires'] > datetime.now(timezone.utc):
-                remaining = status['cache_expires'] - datetime.now(timezone.utc)
+            if status['cache_expires'] > datetime.utcnow():
+                remaining = status['cache_expires'] - datetime.utcnow()
                 hours = remaining.total_seconds() / 3600
                 print(f"Cache status: VALID (expires in {hours:.1f} hours)")
             else:
@@ -114,8 +114,8 @@ def main():
         if not args.force:
             # Check if cache is valid
             status = data_synchronizer.get_sync_status()
-            if status['last_sync'] and status['cache_expires'] > datetime.now(timezone.utc):
-                remaining = status['cache_expires'] - datetime.now(timezone.utc)
+            if status['last_sync'] and status['cache_expires'] > datetime.utcnow():
+                remaining = status['cache_expires'] - datetime.utcnow()
                 hours = remaining.total_seconds() / 3600
                 print(f"\n=== Drug Data Cache Still Valid ===")
                 print(f"Cache expires in {hours:.1f} hours")
@@ -171,8 +171,8 @@ def main():
         # Check drug cache status
         if not args.force:
             status = data_synchronizer.get_sync_status()
-            if status['last_sync'] and status['cache_expires'] > datetime.now(timezone.utc):
-                remaining = status['cache_expires'] - datetime.now(timezone.utc)
+            if status['last_sync'] and status['cache_expires'] > datetime.utcnow():
+                remaining = status['cache_expires'] - datetime.utcnow()
                 hours = remaining.total_seconds() / 3600
                 print(f"Drug cache still valid for {hours:.1f} hours - skipping drug sync")
                 print("(Use --all --force to sync drugs anyway)")

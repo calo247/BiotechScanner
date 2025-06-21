@@ -2,7 +2,7 @@
 
 import requests
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 import time
 import json
@@ -192,16 +192,10 @@ class SECClient:
                             filed_date = None
                             if value_data.get('filed'):
                                 filed_date = datetime.strptime(value_data['filed'], '%Y-%m-%d')
-                                filed_date = filed_date.replace(tzinfo=timezone.utc)
                             
                             if existing:
                                 # Update if the filed date is newer
-                                existing_filed_date = existing.filed_date
-                                # Make sure both dates are timezone-aware for comparison
-                                if existing_filed_date and existing_filed_date.tzinfo is None:
-                                    existing_filed_date = existing_filed_date.replace(tzinfo=timezone.utc)
-                                
-                                if filed_date and (not existing_filed_date or filed_date > existing_filed_date):
+                                if filed_date and (not existing.filed_date or filed_date > existing.filed_date):
                                     existing.value = value_data.get('val')
                                     existing.filed_date = filed_date
                                     existing.accession_number = value_data.get('accn')
@@ -408,12 +402,11 @@ class SECClient:
         filings = self.get_recent_filings(cik)
         
         # Filter by date
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
+        cutoff_date = datetime.utcnow() - timedelta(days=days_back)
         recent_filings = []
         
         for filing in filings:
             filing_date = datetime.strptime(filing['filing_date'], '%Y-%m-%d')
-            filing_date = filing_date.replace(tzinfo=timezone.utc)
             
             if filing_date >= cutoff_date:
                 recent_filings.append(filing)
@@ -452,7 +445,6 @@ class SECClient:
                 
                 # Create filing record
                 filing_date = datetime.strptime(filing['filing_date'], '%Y-%m-%d')
-                filing_date = filing_date.replace(tzinfo=timezone.utc)
                 
                 sec_filing = SECFiling(
                     company=company,

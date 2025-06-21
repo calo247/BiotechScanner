@@ -1,7 +1,7 @@
 """Polygon.io client for fetching stock data."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import pandas as pd
 import signal
@@ -68,7 +68,7 @@ class PolygonClient:
         
         try:
             # Calculate date range
-            end_date = datetime.now(timezone.utc)
+            end_date = datetime.utcnow()
             start_date = end_date - timedelta(days=days_back)
             
             # Format dates for Polygon API
@@ -77,7 +77,7 @@ class PolygonClient:
             
             logger.info(f"Fetching {ticker} from Polygon.io ({days_back} days)...")
             
-            # Get daily aggregates
+            # Get daily aggregates with adjusted prices
             aggs = []
             for agg in self.client.list_aggs(
                 ticker=ticker,
@@ -85,6 +85,7 @@ class PolygonClient:
                 timespan="day",
                 from_=start_str,
                 to=end_str,
+                adjusted=True,  # Get split-adjusted prices
                 limit=50000
             ):
                 aggs.append(agg)
@@ -97,11 +98,11 @@ class PolygonClient:
             data = []
             for agg in aggs:
                 data.append({
-                    'Date': pd.Timestamp(agg.timestamp, unit='ms', tz='UTC'),
+                    'Date': pd.Timestamp(agg.timestamp, unit='ms').tz_localize(None),  # Convert to naive UTC
                     'Open': agg.open,
                     'High': agg.high,
                     'Low': agg.low,
-                    'Close': agg.close,
+                    'Close': agg.close,  # This is adjusted close when adjusted=True
                     'Volume': agg.volume,
                     'VWAP': agg.vwap if hasattr(agg, 'vwap') else None,
                     'Transactions': agg.transactions if hasattr(agg, 'transactions') else None
@@ -191,7 +192,7 @@ class PolygonClient:
                 
                 if last_record:
                     # Calculate days since last record
-                    days_since = (datetime.now(timezone.utc) - last_record.date).days
+                    days_since = (datetime.utcnow() - last_record.date).days
                     # Always refetch the last day (in case of partial day sync) plus days since
                     # Add 1 to include the last record date itself
                     fetch_days = days_since + 1
@@ -223,8 +224,7 @@ class PolygonClient:
                     existing.open = row.get('Open')
                     existing.high = row.get('High')
                     existing.low = row.get('Low')
-                    existing.close = row.get('Close')
-                    existing.adjusted_close = row.get('Close')  # Polygon data is already adjusted
+                    existing.close = row.get('Close')  # Adjusted close from Polygon
                     existing.volume = int(row.get('Volume', 0))
                     existing.market_cap = row.get('MarketCap')
                     existing.source = 'polygon'
@@ -237,8 +237,7 @@ class PolygonClient:
                         open=row.get('Open'),
                         high=row.get('High'),
                         low=row.get('Low'),
-                        close=row.get('Close'),
-                        adjusted_close=row.get('Close'),  # Polygon data is already adjusted
+                        close=row.get('Close'),  # Adjusted close from Polygon
                         volume=int(row.get('Volume', 0)),
                         market_cap=row.get('MarketCap'),
                         source='polygon'

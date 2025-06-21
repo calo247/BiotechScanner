@@ -1,7 +1,7 @@
 """BiopharmIQ API client for fetching drug and catalyst data."""
 
 import requests
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import logging
 from urllib.parse import urlparse, parse_qs
@@ -91,13 +91,8 @@ class BiopharmIQClient:
             ).first()
             
             if cache_entry:
-                # Make sure last_fetched is timezone-aware
-                last_fetched = cache_entry.last_fetched
-                if last_fetched.tzinfo is None:
-                    last_fetched = last_fetched.replace(tzinfo=timezone.utc)
-                
                 # Check if cache is still valid
-                cache_age = datetime.now(timezone.utc) - last_fetched
+                cache_age = datetime.utcnow() - cache_entry.last_fetched
                 if cache_age < config.get_cache_expiry():
                     logger.info(f"Using cached data for {endpoint} (age: {cache_age})")
                     return cache_entry.response_data
@@ -135,12 +130,12 @@ class BiopharmIQClient:
             
             if cache_entry:
                 cache_entry.response_data = data
-                cache_entry.last_fetched = datetime.now(timezone.utc)
+                cache_entry.last_fetched = datetime.utcnow()
             else:
                 cache_entry = APICache(
                     endpoint=endpoint,
                     response_data=data,
-                    last_fetched=datetime.now(timezone.utc)
+                    last_fetched=datetime.utcnow()
                 )
                 db.add(cache_entry)
             
@@ -220,7 +215,7 @@ class BiopharmIQClient:
         if all_drugs:  # Only save if we got data
             complete_response = {
                 'all_results': all_drugs,
-                'fetched_at': datetime.now(timezone.utc).isoformat(),
+                'fetched_at': datetime.utcnow().isoformat(),
                 'total_count': len(all_drugs)
             }
             self._save_response_to_file(endpoint, complete_response)
@@ -326,7 +321,7 @@ class BiopharmIQClient:
         if all_catalysts:  # Only save if we got data
             complete_response = {
                 'all_results': all_catalysts,
-                'fetched_at': datetime.now(timezone.utc).isoformat(),
+                'fetched_at': datetime.utcnow().isoformat(),
                 'total_count': len(all_catalysts)
             }
             self._save_response_to_file(endpoint, complete_response)

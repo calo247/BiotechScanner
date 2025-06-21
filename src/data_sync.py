@@ -1,7 +1,7 @@
 """Data synchronization module for updating database with API data."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict, Any, Optional
 from dateutil import parser as date_parser
 from tqdm import tqdm
@@ -98,8 +98,7 @@ class DataSynchronizer:
             company = Company(
                 biopharma_id=biopharma_company_id,
                 ticker=ticker,
-                name=company_data.get('name', ticker),
-                sector='Biotechnology'  # Default sector, can be updated later
+                name=company_data.get('name', ticker)
             )
             db.add(company)
             logger.debug(f"Created new company: {ticker} (BiopharmIQ ID: {biopharma_company_id})")
@@ -193,17 +192,14 @@ class DataSynchronizer:
                         'indications_text': drug_data.get('indications_text', ''),
                         'stage': stage,
                         'stage_event_label': stage_event.get('label', ''),
-                        'event_score': stage_event.get('score'),
                         'catalyst_date': self._parse_catalyst_date(drug_data.get('catalyst_date')),
                         'catalyst_date_text': drug_data.get('catalyst_date_text', ''),
                         'has_catalyst': drug_data.get('has_catalyst', False),
                         'catalyst_source': drug_data.get('catalyst_source', ''),
-                        'is_big_mover': drug_data.get('is_big_mover', False),
-                        'is_suspected_mover': drug_data.get('is_suspected_mover', False),
                         'note': drug_data.get('note', ''),
                         'market_info': drug_data.get('market', ''),
                         'last_update_name': drug_data.get('last_name_updated', ''),
-                        'api_last_updated': datetime.now(timezone.utc)
+                        'api_last_updated': datetime.utcnow()
                     }
                     
                     if drug:
@@ -389,7 +385,6 @@ class DataSynchronizer:
                     if catalyst_date_str:
                         try:
                             catalyst_date = datetime.strptime(catalyst_date_str, '%Y-%m-%d')
-                            catalyst_date = catalyst_date.replace(tzinfo=timezone.utc)
                         except Exception as e:
                             logger.warning(f"Could not parse catalyst date '{catalyst_date_str}': {e}")
                     
@@ -491,9 +486,9 @@ class DataSynchronizer:
             historical_catalyst_count = db.query(HistoricalCatalyst).count()
             companies_with_historical = db.query(HistoricalCatalyst.company_id).distinct().count()
             
-            # Make datetimes timezone-aware if they aren't already
-            if last_sync and last_sync.tzinfo is None:
-                last_sync = last_sync.replace(tzinfo=timezone.utc)
+            # Make datetimes timezone-naive if they aren't already
+            if last_sync and last_sync.tzinfo is not None:
+                last_sync = last_sync.replace(tzinfo=None)
             
             cache_expires = None
             if last_sync:
