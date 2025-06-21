@@ -21,6 +21,11 @@ def index():
     """Serve the main page."""
     return render_template('index.html')
 
+@app.route('/catalyst/<int:catalyst_id>')
+def catalyst_detail(catalyst_id):
+    """Serve the catalyst detail page."""
+    return render_template('catalyst_detail.html')
+
 @app.route('/api/catalysts/upcoming', methods=['GET'])
 def get_upcoming_catalysts():
     """Get upcoming catalyst events."""
@@ -243,6 +248,77 @@ def get_historical_catalysts():
             'per_page': per_page,
             'total_pages': (total + per_page - 1) // per_page
         })
+
+@app.route('/api/catalysts/<int:catalyst_id>', methods=['GET'])
+def get_catalyst_detail(catalyst_id):
+    """Get detailed information for a specific catalyst."""
+    with get_db() as db:
+        # Get the drug with catalyst details
+        drug = db.query(Drug).join(Company).filter(
+            Drug.id == catalyst_id,
+            Drug.has_catalyst == True
+        ).first()
+        
+        if not drug:
+            return jsonify({'error': 'Catalyst not found'}), 404
+        
+        # Get latest stock data
+        latest_stock = db.query(StockData).filter(
+            StockData.company_id == drug.company_id
+        ).order_by(StockData.date.desc()).first()
+        
+        # Get recent stock data (last 30 days)
+        recent_stock_data = []
+        if latest_stock:
+            recent_data = db.query(StockData).filter(
+                StockData.company_id == drug.company_id,
+                StockData.date >= (latest_stock.date - timedelta(days=30))
+            ).order_by(StockData.date.asc()).all()
+            
+            recent_stock_data = [{
+                'date': sd.date.isoformat(),
+                'close': sd.close,
+                'volume': sd.volume,
+                'market_cap': sd.market_cap
+            } for sd in recent_data]
+        
+        # Format response with comprehensive details
+        result = {
+            'id': drug.id,
+            'drug_name': drug.drug_name,
+            'mechanism_of_action': drug.mechanism_of_action,
+            'stage': drug.stage,
+            'stage_event_label': drug.stage_event_label,
+            'catalyst_date': drug.catalyst_date.isoformat() if drug.catalyst_date else None,
+            'catalyst_date_text': drug.catalyst_date_text,
+            'indications': drug.indications or [],
+            'indications_text': drug.indications_text,
+            'note': drug.note,
+            'market_info': drug.market_info,
+            'catalyst_source': drug.catalyst_source,
+            'last_update_name': drug.last_update_name,
+            'api_last_updated': drug.api_last_updated.isoformat() if drug.api_last_updated else None,
+            'company': {
+                'id': drug.company.id,
+                'ticker': drug.company.ticker,
+                'name': drug.company.name,
+                'biopharma_id': drug.company.biopharma_id
+            },
+            'stock_data': {
+                'current': {
+                    'price': latest_stock.close if latest_stock else None,
+                    'volume': latest_stock.volume if latest_stock else None,
+                    'market_cap': latest_stock.market_cap if latest_stock else None,
+                    'date': latest_stock.date.isoformat() if latest_stock else None,
+                    'pe_ratio': latest_stock.pe_ratio if latest_stock else None,
+                    'week_52_high': latest_stock.week_52_high if latest_stock else None,
+                    'week_52_low': latest_stock.week_52_low if latest_stock else None
+                },
+                'recent_history': recent_stock_data
+            }
+        }
+        
+        return jsonify(result)
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():

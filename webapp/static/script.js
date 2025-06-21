@@ -68,7 +68,7 @@ function displayUpcomingCatalysts(catalysts) {
         const displayDate = catalyst.catalyst_date_text || formatDate(catalyst.catalyst_date);
         
         return `
-            <tr>
+            <tr class="catalyst-row" data-catalyst-id="${catalyst.id}" onclick="viewCatalystDetail(${catalyst.id})">
                 <td class="date-cell">${escapeHtml(displayDate)}</td>
                 <td><span class="ticker">${escapeHtml(catalyst.company.ticker)}</span></td>
                 <td>${escapeHtml(catalyst.company.name)}</td>
@@ -239,5 +239,10 @@ function updateSortIndicators() {
         activeHeader.classList.add(`sorted-${sortState.direction}`);
         activeHeader.querySelector('.sort-icon').textContent = sortState.direction === 'asc' ? '↑' : '↓';
     }
+}
+
+// Navigate to catalyst detail page
+function viewCatalystDetail(catalystId) {
+    window.location.href = `/catalyst/${catalystId}?id=${catalystId}`;
 }
 
