@@ -3,12 +3,16 @@ let currentPage = 1;
 let sortState = { column: 'date', direction: 'asc' };
 let currentData = [];
 let marketCapSlider = null;
+let stockPriceSlider = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeMarketCapSlider();
+    initializeStockPriceSlider();
     loadUpcomingCatalysts();
     setupSortHandlers();
+    // Initialize reset button state
+    updateResetButtonState(false);
 });
 
 
@@ -30,6 +34,50 @@ function initializeMarketCapSlider() {
     });
 }
 
+// Initialize stock price slider
+function initializeStockPriceSlider() {
+    const container = document.getElementById('stock-price-slider');
+    stockPriceSlider = new StockPriceRangeSlider(container, {
+        min: 0,
+        max: 1000, // $1000 max
+        currentMin: 0,
+        currentMax: 1000,
+        onChange: (min, max) => {
+            // Debounce the API call
+            clearTimeout(window.stockPriceTimeout);
+            window.stockPriceTimeout = setTimeout(() => {
+                loadUpcomingCatalysts(1); // Reset to page 1
+            }, 300);
+        }
+    });
+}
+
+// Handle time range filter changes
+function handleTimeRangeChange() {
+    const daysFilter = document.getElementById('days-filter').value;
+    const customDateInputs = document.getElementById('custom-date-inputs');
+    
+    if (daysFilter === 'custom') {
+        customDateInputs.style.display = 'flex';
+        // Set default dates if not already set
+        const startDate = document.getElementById('start-date');
+        const endDate = document.getElementById('end-date');
+        
+        if (!startDate.value) {
+            startDate.value = new Date().toISOString().split('T')[0]; // Today
+        }
+        if (!endDate.value) {
+            const oneMonth = new Date();
+            oneMonth.setMonth(oneMonth.getMonth() + 1);
+            endDate.value = oneMonth.toISOString().split('T')[0]; // One month from today
+        }
+    } else {
+        customDateInputs.style.display = 'none';
+    }
+    
+    loadUpcomingCatalysts(1); // Reset to page 1
+}
+
 // Load upcoming catalysts
 async function loadUpcomingCatalysts(page = 1) {
     const stageFilter = document.getElementById('stage-filter').value;
@@ -39,13 +87,15 @@ async function loadUpcomingCatalysts(page = 1) {
     // Get market cap range from slider
     const marketCapRange = marketCapSlider ? marketCapSlider.getValues() : { min: 0, max: 1000000000000 };
     
+    // Get stock price range from slider
+    const stockPriceRange = stockPriceSlider ? stockPriceSlider.getValues() : { min: 0, max: 1000 };
+    
     document.getElementById('upcoming-loading').style.display = 'block';
     document.getElementById('upcoming-content').style.display = 'none';
     
     try {
         const params = new URLSearchParams({
             stage: stageFilter,
-            days: daysFilter,
             search: searchTerm,
             sort_by: sortState.column,
             sort_dir: sortState.direction,
@@ -53,10 +103,27 @@ async function loadUpcomingCatalysts(page = 1) {
             per_page: 25
         });
         
+        // Handle time range - either days or custom dates
+        if (daysFilter === 'custom') {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+        } else if (daysFilter) {
+            params.append('days', daysFilter);
+        }
+        
         // Add market cap range parameters only if not full range
         if (marketCapRange.min > 0 || marketCapRange.max < 1000000000000) {
             params.append('min_marketcap', marketCapRange.min);
             params.append('max_marketcap', marketCapRange.max);
+        }
+        
+        // Add stock price range parameters only if not full range
+        if (stockPriceRange.min > 0 || stockPriceRange.max < 1000) {
+            params.append('min_stockprice', stockPriceRange.min);
+            params.append('max_stockprice', stockPriceRange.max);
         }
         
         const response = await fetch(`/api/catalysts/upcoming?${params}`);
@@ -84,7 +151,7 @@ function displayUpcomingCatalysts(catalysts) {
     updateFilterStatus();
     
     if (catalysts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No upcoming catalysts found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No upcoming catalysts found</td></tr>';
         return;
     }
     
@@ -95,26 +162,31 @@ function displayUpcomingCatalysts(catalysts) {
         let indication = '';
         if (catalyst.indications && catalyst.indications.length > 0) {
             const ind = catalyst.indications[0];
-            indication = typeof ind === 'string' ? ind : ind.indication_name || ind.name || '';
+            indication = typeof ind === 'string' ? ind : ind.title || ind.indication_name || ind.name || '';
         }
         
         // Use catalyst_date_text or fallback to formatted date
         const displayDate = catalyst.catalyst_date_text || formatDate(catalyst.catalyst_date);
+        
+        // Create drug & indication column content
+        const drugAndIndicationContent = `
+            <div class="drug-name">${escapeHtml(catalyst.drug_name)}</div>
+            ${indication ? `<div class="drug-indication">${escapeHtml(indication)}</div>` : ''}
+        `;
         
         return `
             <tr class="catalyst-row" data-catalyst-id="${catalyst.id}" onclick="viewCatalystDetail(${catalyst.id})">
                 <td class="date-cell">${escapeHtml(displayDate)}</td>
                 <td><span class="ticker">${escapeHtml(catalyst.company.ticker)}</span></td>
                 <td>${escapeHtml(catalyst.company.name)}</td>
-                <td>${escapeHtml(catalyst.drug_name)}</td>
+                <td class="drug-indication-cell">${drugAndIndicationContent}</td>
                 <td class="stage-cell"><span class="stage-badge ${stageClass}">${catalyst.stage}</span></td>
-                <td>${escapeHtml(indication)}</td>
                 <td class="market-cap">${formatMarketCap(catalyst.company.market_cap)}</td>
                 <td class="price">${catalyst.company.stock_price ? '$' + catalyst.company.stock_price.toFixed(2) : 'N/A'}</td>
             </tr>
             ${catalyst.note ? `
             <tr class="note-row">
-                <td colspan="8">
+                <td colspan="7">
                     <div class="note-content">
                         ${formatNoteWithDateBreaks(catalyst.note)}
                     </div>
@@ -291,14 +363,32 @@ function updateFilterStatus() {
     if (marketCapSlider) {
         const range = marketCapSlider.getValues();
         if (range.min > 0 || range.max < 1000000000000) {
-            const minStr = marketCapSlider.formatValue(range.min);
-            const maxStr = marketCapSlider.formatValue(range.max);
-            activeFilters.push(`Market Cap: ${minStr} - ${maxStr}`);
+            const minStr = range.min.toLocaleString('en-US');
+            const maxStr = range.max.toLocaleString('en-US');
+            activeFilters.push(`Market Cap: $${minStr} - $${maxStr}`);
+        }
+    }
+    
+    // Stock price range from slider
+    if (stockPriceSlider) {
+        const range = stockPriceSlider.getValues();
+        if (range.min > 0 || range.max < 1000) {
+            const minStr = range.min.toLocaleString('en-US');
+            const maxStr = range.max.toLocaleString('en-US');
+            activeFilters.push(`Stock Price: $${minStr} - $${maxStr}`);
         }
     }
     
     const days = document.getElementById('days-filter').value;
-    if (days) {
+    if (days === 'custom') {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        if (startDate || endDate) {
+            const startStr = startDate ? new Date(startDate).toLocaleDateString() : 'Start';
+            const endStr = endDate ? new Date(endDate).toLocaleDateString() : 'End';
+            activeFilters.push(`Time: ${startStr} - ${endStr}`);
+        }
+    } else if (days) {
         const daysText = document.getElementById('days-filter').selectedOptions[0].text;
         activeFilters.push(`Time: ${daysText}`);
     }
@@ -321,6 +411,50 @@ function updateFilterStatus() {
         filterStatus.style.display = 'block';
     } else {
         filterStatus.style.display = 'none';
+    }
+    
+    // Update reset button state
+    updateResetButtonState(activeFilters.length > 0);
+}
+
+// Reset all filters to default values
+function resetAllFilters() {
+    // Reset stage filter
+    document.getElementById('stage-filter').value = '';
+    
+    // Reset time range filter
+    document.getElementById('days-filter').value = '';
+    document.getElementById('custom-date-inputs').style.display = 'none';
+    document.getElementById('start-date').value = '';
+    document.getElementById('end-date').value = '';
+    
+    // Reset search filter
+    document.getElementById('search-filter').value = '';
+    
+    // Reset market cap slider
+    if (marketCapSlider) {
+        marketCapSlider.setValues(0, 1000000000000);
+    }
+    
+    // Reset stock price slider
+    if (stockPriceSlider) {
+        stockPriceSlider.setValues(0, 1000);
+    }
+    
+    // Reload catalysts with default filters
+    loadUpcomingCatalysts(1);
+}
+
+// Update reset button state based on whether filters are active
+function updateResetButtonState(hasActiveFilters) {
+    const resetButton = document.getElementById('reset-all-filters');
+    if (resetButton) {
+        resetButton.disabled = !hasActiveFilters;
+        if (hasActiveFilters) {
+            resetButton.classList.remove('disabled');
+        } else {
+            resetButton.classList.add('disabled');
+        }
     }
 }
 

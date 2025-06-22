@@ -34,6 +34,8 @@ def get_upcoming_catalysts():
     # Get query parameters
     stage_filter = request.args.get('stage', '')
     days_filter = request.args.get('days', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     search_term = request.args.get('search', '')
     sort_by = request.args.get('sort_by', 'date')
     sort_dir = request.args.get('sort_dir', 'asc')
@@ -44,12 +46,25 @@ def get_upcoming_catalysts():
     min_marketcap = request.args.get('min_marketcap', type=float)
     max_marketcap = request.args.get('max_marketcap', type=float)
     
+    # Get stock price range parameters
+    min_stockprice = request.args.get('min_stockprice', type=float)
+    max_stockprice = request.args.get('max_stockprice', type=float)
+    
     with get_db() as db:
         # Build query using the new CatalystQuery builder
         query = CatalystQuery(db).with_stock_data()
         
         # Apply time range filter
-        if days_filter:
+        if start_date or end_date:
+            # Custom date range
+            from datetime import datetime
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+            # Add one day to end_date to include the entire end day
+            if end_dt:
+                end_dt = end_dt.replace(hour=23, minute=59, second=59)
+            query = query.date_range(start_dt, end_dt)
+        elif days_filter:
             query = query.upcoming(days=int(days_filter))
         else:
             query = query.upcoming()  # All future catalysts
@@ -61,6 +76,10 @@ def get_upcoming_catalysts():
         # Apply market cap range filter
         if min_marketcap is not None or max_marketcap is not None:
             query = query.by_market_cap_range(min_marketcap, max_marketcap)
+        
+        # Apply stock price range filter
+        if min_stockprice is not None or max_stockprice is not None:
+            query = query.by_stock_price_range(min_stockprice, max_stockprice)
         
         # Apply search filter
         if search_term:

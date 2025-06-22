@@ -1,27 +1,26 @@
-// Custom double-ended range slider for market cap filtering
-class MarketCapRangeSlider {
+// Stock price range slider component
+class StockPriceRangeSlider {
     constructor(container, options = {}) {
         this.container = container;
         this.minValue = options.min || 0;
-        this.maxValue = options.max || 1000000000000; // 1 trillion
+        this.maxValue = options.max || 1000; // $1000 max
         this.currentMin = options.currentMin || this.minValue;
         this.currentMax = options.currentMax || this.maxValue;
         this.onChange = options.onChange || (() => {});
         
-        // Logarithmic scale points for better distribution
+        // Linear scale points for stock prices
         this.scalePoints = [
             { value: 0, label: '$0', position: 0 },
-            { value: 10000000, label: '$10M', position: 10 },
-            { value: 50000000, label: '$50M', position: 20 },
-            { value: 100000000, label: '$100M', position: 30 },
-            { value: 300000000, label: '$300M', position: 40 },
-            { value: 1000000000, label: '$1B', position: 50 },
-            { value: 2000000000, label: '$2B', position: 60 },
-            { value: 5000000000, label: '$5B', position: 70 },
-            { value: 10000000000, label: '$10B', position: 80 },
-            { value: 50000000000, label: '$50B', position: 90 },
-            { value: 200000000000, label: '$200B', position: 95 },
-            { value: 1000000000000, label: '$1T', position: 100 }
+            { value: 1, label: '$1', position: 10 },
+            { value: 5, label: '$5', position: 20 },
+            { value: 10, label: '$10', position: 30 },
+            { value: 25, label: '$25', position: 40 },
+            { value: 50, label: '$50', position: 50 },
+            { value: 100, label: '$100', position: 60 },
+            { value: 200, label: '$200', position: 70 },
+            { value: 500, label: '$500', position: 80 },
+            { value: 750, label: '$750', position: 90 },
+            { value: 1000, label: '$1000', position: 100 }
         ];
         
         this.init();
@@ -30,19 +29,19 @@ class MarketCapRangeSlider {
     init() {
         // Create HTML structure
         this.container.innerHTML = `
-            <div class="market-cap-slider">
+            <div class="stock-price-slider">
                 <div class="slider-header">
-                    <span class="slider-label">Market Cap Range:</span>
+                    <span class="slider-label">Stock Price Range:</span>
                     <button class="reset-button" title="Reset to full range">Reset</button>
                 </div>
                 <div class="slider-main">
                     <div class="slider-inputs">
-                        <input type="text" class="market-cap-input min-input" 
+                        <input type="text" class="stock-price-input min-input" 
                                placeholder="0" 
                                value="${this.formatValue(this.currentMin)}">
                         <span class="separator">to</span>
-                        <input type="text" class="market-cap-input max-input" 
-                               placeholder="1,000,000,000" 
+                        <input type="text" class="stock-price-input max-input" 
+                               placeholder="1,000" 
                                value="${this.formatValue(this.currentMax)}">
                     </div>
                     <div class="slider-container">
@@ -110,9 +109,9 @@ class MarketCapRangeSlider {
             const newValue = this.positionToValue(newPosition);
             
             if (activeHandle === 'min') {
-                this.currentMin = Math.min(newValue, this.currentMax - 1000000); // Min $1M difference
+                this.currentMin = Math.min(newValue, this.currentMax - 0.01); // Min $0.01 difference
             } else {
-                this.currentMax = Math.max(newValue, this.currentMin + 1000000);
+                this.currentMax = Math.max(newValue, this.currentMin + 0.01);
             }
             
             this.updatePositions();
@@ -148,9 +147,9 @@ class MarketCapRangeSlider {
             const maxDistance = Math.abs(clickValue - this.currentMax);
             
             if (minDistance < maxDistance) {
-                this.currentMin = Math.min(clickValue, this.currentMax - 1000000);
+                this.currentMin = Math.min(clickValue, this.currentMax - 0.01);
             } else {
-                this.currentMax = Math.max(clickValue, this.currentMin + 1000000);
+                this.currentMax = Math.max(clickValue, this.currentMin + 0.01);
             }
             
             this.updatePositions();
@@ -168,7 +167,7 @@ class MarketCapRangeSlider {
         // Input box events
         this.elements.minInput.addEventListener('change', (e) => {
             const value = this.parseInputValue(e.target.value);
-            if (value !== null && value <= this.currentMax - 1000000) {
+            if (value !== null && value <= this.currentMax - 0.01) {
                 this.currentMin = Math.max(this.minValue, value);
                 this.updatePositions();
                 this.onChange(this.currentMin, this.currentMax);
@@ -180,7 +179,7 @@ class MarketCapRangeSlider {
         
         this.elements.maxInput.addEventListener('change', (e) => {
             const value = this.parseInputValue(e.target.value);
-            if (value !== null && value >= this.currentMin + 1000000) {
+            if (value !== null && value >= this.currentMin + 0.01) {
                 this.currentMax = Math.min(this.maxValue, value);
                 this.updatePositions();
                 this.onChange(this.currentMin, this.currentMax);
@@ -201,7 +200,7 @@ class MarketCapRangeSlider {
     }
     
     valueToPosition(value) {
-        // Use logarithmic interpolation between scale points
+        // Use linear interpolation between scale points
         for (let i = 0; i < this.scalePoints.length - 1; i++) {
             const point1 = this.scalePoints[i];
             const point2 = this.scalePoints[i + 1];
@@ -213,7 +212,6 @@ class MarketCapRangeSlider {
                 
                 if (valueRange === 0) return point1.position;
                 
-                // Linear interpolation between points
                 const ratio = valueOffset / valueRange;
                 return point1.position + (ratio * positionRange);
             }
@@ -235,9 +233,8 @@ class MarketCapRangeSlider {
                 
                 if (positionRange === 0) return point1.value;
                 
-                // Linear interpolation between points
                 const ratio = positionOffset / positionRange;
-                return Math.round(point1.value + (ratio * valueRange));
+                return parseFloat((point1.value + (ratio * valueRange)).toFixed(2));
             }
         }
         
@@ -267,7 +264,10 @@ class MarketCapRangeSlider {
     
     formatValue(value) {
         if (value === 0) return '0';
-        return value.toLocaleString('en-US');
+        return value.toLocaleString('en-US', {
+            minimumFractionDigits: value < 1 ? 2 : 0,
+            maximumFractionDigits: value < 1 ? 2 : 0
+        });
     }
     
     parseInputValue(input) {
@@ -277,9 +277,9 @@ class MarketCapRangeSlider {
         if (input === '' || input === '0') return 0;
         
         // Check if it's a valid number
-        if (!/^\d+$/.test(input)) return null;
+        if (!/^\d+(\.\d{1,2})?$/.test(input)) return null;
         
-        const value = parseInt(input, 10);
+        const value = parseFloat(input);
         
         return isNaN(value) ? null : value;
     }

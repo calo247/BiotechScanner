@@ -14,6 +14,7 @@ class StageCategory(Enum):
     PHASE_1_2 = "Phase 1/2"
     PHASE_2_3 = "Phase 2/3"
     NDA_BLA = "NDA/BLA"
+    PDUFA = "PDUFA"
     APPROVED = "Approved"
     OTHER = "Other"
 
@@ -57,6 +58,12 @@ class StageFilter:
         "nda/bla": StageCategory.NDA_BLA,
         "nda filed": StageCategory.NDA_BLA,
         "bla filed": StageCategory.NDA_BLA,
+        
+        # PDUFA
+        "pdufa": StageCategory.PDUFA,
+        "pdufa date": StageCategory.PDUFA,
+        "fda action date": StageCategory.PDUFA,
+        "fda decision": StageCategory.PDUFA,
         
         # Approved
         "approved": StageCategory.APPROVED,

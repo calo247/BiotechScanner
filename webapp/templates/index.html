@@ -23,26 +23,40 @@
                         <option value="Phase 2/3">Phase 2/3</option>
                         <option value="Approved">Approved</option>
                         <option value="NDA">NDA/BLA</option>
-                        <option value="Preclinical">Preclinical</option>
+                        <option value="PDUFA">PDUFA</option>
                     </select>
                 </div>
                 <div class="filter-group market-cap-filter-group">
                     <div id="market-cap-slider"></div>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group stock-price-filter-group">
+                    <div id="stock-price-slider"></div>
+                </div>
+                <div class="filter-group time-filter-group">
                     <label for="days-filter">Time Range:</label>
-                    <select id="days-filter" onchange="loadUpcomingCatalysts()">
-                        <option value="">All Upcoming</option>
-                        <option value="7">Next 7 Days</option>
-                        <option value="30">Next 30 Days</option>
-                        <option value="60">Next 60 Days</option>
-                        <option value="90">Next 90 Days</option>
-                        <option value="180">Next 6 Months</option>
-                        <option value="365">Next Year</option>
-                    </select>
+                    <div class="time-filter-controls">
+                        <select id="days-filter" onchange="handleTimeRangeChange()">
+                            <option value="">All Upcoming</option>
+                            <option value="7">Next 7 Days</option>
+                            <option value="30">Next 30 Days</option>
+                            <option value="60">Next 60 Days</option>
+                            <option value="90">Next 90 Days</option>
+                            <option value="180">Next 6 Months</option>
+                            <option value="365">Next Year</option>
+                            <option value="custom">Custom Date Range</option>
+                        </select>
+                        <div id="custom-date-inputs" class="custom-date-inputs" style="display: none;">
+                            <input type="date" id="start-date" onchange="loadUpcomingCatalysts()">
+                            <span class="date-separator">to</span>
+                            <input type="date" id="end-date" onchange="loadUpcomingCatalysts()">
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group search-group">
                     <input type="text" id="search-filter" placeholder="Search ticker, company, drug..." oninput="filterTable()">
+                </div>
+                <div class="filter-group reset-group">
+                    <button id="reset-all-filters" class="reset-all-button" onclick="resetAllFilters()">Reset All Filters</button>
                 </div>
             </div>
 
@@ -54,9 +68,8 @@
                             <th class="sortable" data-sort="date">Catalyst Date <span class="sort-icon">↕</span></th>
                             <th class="sortable" data-sort="ticker">Ticker <span class="sort-icon">↕</span></th>
                             <th class="sortable" data-sort="company">Company <span class="sort-icon">↕</span></th>
-                            <th>Drug</th>
+                            <th>Drug & Indication</th>
                             <th>Stage</th>
-                            <th>Indication</th>
                             <th class="sortable" data-sort="marketcap">Market Cap <span class="sort-icon">↕</span></th>
                             <th class="sortable" data-sort="price">Stock Price <span class="sort-icon">↕</span></th>
                         </tr>
@@ -72,6 +85,7 @@
     </div>
 
     <script src="{{ url_for('static', filename='range-slider.js') }}"></script>
+    <script src="{{ url_for('static', filename='stock-price-slider.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

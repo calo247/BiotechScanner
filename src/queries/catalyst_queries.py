@@ -100,6 +100,18 @@ class CatalystQuery:
         min_cap, max_cap = MarketCapFilter.get_range(category)
         return self.by_market_cap_range(min_cap, max_cap)
     
+    def by_stock_price_range(self, min_price: Optional[float] = None, max_price: Optional[float] = None) -> 'CatalystQuery':
+        """Filter by stock price range."""
+        if min_price is not None or max_price is not None:
+            self._ensure_stock_data_join()
+            
+            if min_price is not None:
+                self._query = self._query.filter(StockData.close >= min_price)
+            if max_price is not None:
+                self._query = self._query.filter(StockData.close <= max_price)
+        
+        return self
+    
     def search(self, search_term: str) -> 'CatalystQuery':
         """Search across multiple fields."""
         if search_term:
