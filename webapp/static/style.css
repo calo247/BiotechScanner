@@ -887,3 +887,216 @@ h1 {
     font-size: 14px;
     margin-left: 8px;
 }
+
+/* AI Analysis Section */
+.ai-analysis-section {
+    margin-top: 40px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.ai-analysis-section h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.ai-report-container {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.ai-report-container:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-report-header {
+    padding: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+}
+
+.ai-report-header:hover {
+    background: #e9ecef;
+}
+
+.report-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.report-date {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.recommendation-badge {
+    background: #007bff;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.success-prob {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.report-expand-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+}
+
+.expand-text {
+    font-size: 14px;
+}
+
+.expand-arrow {
+    font-size: 12px;
+}
+
+.ai-report-content {
+    padding: 25px;
+}
+
+.report-metrics {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.report-metrics .metric {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.report-metrics label {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.report-metrics .upside {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.report-metrics .downside {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.report-metrics .risk-high {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.report-metrics .risk-moderate {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.report-metrics .risk-low {
+    color: #28a745;
+    font-weight: 600;
+}
+
+/* Markdown content styling */
+.report-markdown {
+    color: #333;
+    line-height: 1.8;
+}
+
+.report-markdown h1 {
+    font-size: 24px;
+    margin: 20px 0 15px 0;
+    color: #2c3e50;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.report-markdown h2 {
+    font-size: 20px;
+    margin: 20px 0 12px 0;
+    color: #34495e;
+}
+
+.report-markdown h3 {
+    font-size: 18px;
+    margin: 15px 0 10px 0;
+    color: #34495e;
+}
+
+.report-markdown p {
+    margin: 12px 0;
+}
+
+.report-markdown ul,
+.report-markdown ol {
+    margin: 12px 0;
+    padding-left: 30px;
+}
+
+.report-markdown li {
+    margin: 8px 0;
+}
+
+.report-markdown strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.report-markdown em {
+    font-style: italic;
+    color: #555;
+}
+
+/* Collapsed state */
+.ai-report-container.collapsed .ai-report-header {
+    border-bottom: none;
+}
+
+/* No reports message */
+.no-reports {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.no-reports p {
+    margin: 10px 0;
+}
+
+.generate-hint {
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.command-example {
+    display: inline-block;
+    background: #2c3e50;
+    color: #f8f9fa;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    margin-top: 10px;
+}

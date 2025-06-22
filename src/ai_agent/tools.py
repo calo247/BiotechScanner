@@ -188,6 +188,7 @@ class CatalystAnalysisTools:
                           days_back: int = 365) -> List[Dict[str, Any]]:
         """
         Search SEC filings for specific terms related to the catalyst.
+        Uses RAG pipeline if available, falls back to parsed_content.
         
         Args:
             company_id: Company to search
@@ -198,6 +199,50 @@ class CatalystAnalysisTools:
         Returns:
             List of relevant filing excerpts with context
         """
+        # Try to use RAG search if available
+        try:
+            from ..rag.rag_search import RAGSearchEngine
+            
+            # Initialize RAG engine (cached in production)
+            rag_engine = RAGSearchEngine(model_type='general-fast')
+            
+            # Combine search terms into query
+            query = ' '.join(search_terms)
+            
+            # Search with RAG
+            rag_results = rag_engine.search(
+                query=query,
+                company_id=company_id,
+                filing_types=filing_types,
+                k=10
+            )
+            
+            # Format results
+            results = []
+            for result in rag_results:
+                # Get expanded context
+                context = rag_engine.get_context_window(result, window_size=500)
+                
+                results.append({
+                    "filing_type": result['filing_type'],
+                    "filing_date": result['filing_date'],
+                    "accession_number": result.get('accession_number', ''),
+                    "section": result.get('section', 'Unknown'),
+                    "excerpt": context,
+                    "relevance_score": result.get('score', 0),
+                    "matched_query": query
+                })
+            
+            rag_engine.close()
+            return results
+            
+        except ImportError:
+            # Fallback to old method if RAG not available
+            pass
+        except Exception as e:
+            print(f"RAG search failed, falling back to basic search: {e}")
+        
+        # Original implementation as fallback
         cutoff_date = datetime.utcnow() - timedelta(days=days_back)
         
         query = self.session.query(SECFiling).filter(

@@ -22,3 +22,9 @@ typing-extensions>=4.9.0  # For better type hints
 
 # AI/LLM dependencies
 openai>=1.0.0  # For OpenRouter integration
+
+# RAG Pipeline dependencies
+faiss-cpu>=1.7.4  # Use faiss-gpu if CUDA available
+sentence-transformers>=2.2.2
+torch>=2.0.0  # CPU version, use torch+cu118 for CUDA
+numpy>=1.24.0

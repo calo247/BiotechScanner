@@ -148,6 +148,40 @@ function displayCatalystDetail(catalyst) {
                         ` : ''}
                     </div>
                 </section>
+
+                ${catalyst.ai_report ? `
+                <section class="ai-analysis-section">
+                    <h2>AI Analysis Report</h2>
+                    <div class="ai-report-container">
+                        <div class="ai-report-header">
+                            <div class="report-meta">
+                                <span class="report-date">Generated: ${formatDate(catalyst.ai_report.created_at)}</span>
+                                ${catalyst.ai_report.recommendation ? `<span class="recommendation-badge">${escapeHtml(catalyst.ai_report.recommendation)}</span>` : ''}
+                                ${catalyst.ai_report.success_probability ? `<span class="success-prob">${(catalyst.ai_report.success_probability * 100).toFixed(0)}% Success</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="ai-report-content">
+                            <div class="report-metrics">
+                                ${catalyst.ai_report.price_target_upside ? `<div class="metric"><label>Upside:</label> <span class="upside">${escapeHtml(catalyst.ai_report.price_target_upside)}</span></div>` : ''}
+                                ${catalyst.ai_report.price_target_downside ? `<div class="metric"><label>Downside:</label> <span class="downside">${escapeHtml(catalyst.ai_report.price_target_downside)}</span></div>` : ''}
+                                ${catalyst.ai_report.risk_level ? `<div class="metric"><label>Risk Level:</label> <span class="risk-${catalyst.ai_report.risk_level.toLowerCase()}">${escapeHtml(catalyst.ai_report.risk_level)}</span></div>` : ''}
+                            </div>
+                            <div class="report-markdown">
+                                ${renderMarkdown(catalyst.ai_report.report_markdown)}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                ` : `
+                <section class="ai-analysis-section">
+                    <h2>AI Analysis Report</h2>
+                    <div class="no-reports">
+                        <p>No AI analysis report available for this catalyst yet.</p>
+                        <p class="generate-hint">To generate an AI analysis report, use the command line tool:</p>
+                        <code class="command-example">python3 analyze_catalyst.py --id ${catalyst.id}</code>
+                    </div>
+                </section>
+                `}
             </div>
         </div>
     `;
@@ -211,4 +245,41 @@ function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+
+function renderMarkdown(markdown) {
+    if (!markdown) return '';
+    
+    // Basic markdown rendering
+    let html = escapeHtml(markdown);
+    
+    // Headers
+    html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+    
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Lists
+    html = html.replace(/^- (.*?)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    html = html.replace(/^\d+\. (.*?)$/gm, '<li>$1</li>');
+    
+    // Paragraphs
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = '<p>' + html + '</p>';
+    
+    // Line breaks
+    html = html.replace(/\n/g, '<br>');
+    
+    // Clean up empty paragraphs
+    html = html.replace(/<p><\/p>/g, '');
+    html = html.replace(/<p><br>/g, '<p>');
+    
+    return html;
 }

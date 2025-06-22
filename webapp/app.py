@@ -10,7 +10,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.database.database import get_db
-from src.database.models import Drug, Company, StockData, HistoricalCatalyst
+from src.database.models import Drug, Company, StockData, HistoricalCatalyst, CatalystReport
 from src.queries import CatalystQuery, CompanyQuery
 from src.queries.catalyst_queries import HistoricalCatalystQuery
 from sqlalchemy import and_, or_, func
@@ -221,6 +221,29 @@ def get_catalyst_detail(catalyst_id):
             cash_balance_date = None
             cash_balance_period = None
         
+        # Get the most recent AI analysis report for this catalyst
+        latest_report = db.query(CatalystReport).filter(
+            CatalystReport.drug_id == drug.id
+        ).order_by(CatalystReport.created_at.desc()).first()
+        
+        # Format AI report for response
+        formatted_report = None
+        if latest_report:
+            formatted_report = {
+                'id': latest_report.id,
+                'created_at': latest_report.created_at.isoformat() if latest_report.created_at else None,
+                'report_type': latest_report.report_type,
+                'model_used': latest_report.model_used,
+                'report_markdown': latest_report.report_markdown,
+                'report_summary': latest_report.report_summary,
+                'success_probability': latest_report.success_probability,
+                'recommendation': latest_report.recommendation,
+                'price_target_upside': latest_report.price_target_upside,
+                'price_target_downside': latest_report.price_target_downside,
+                'risk_level': latest_report.risk_level,
+                'generation_time_ms': latest_report.generation_time_ms
+            }
+        
         # Format response with comprehensive details
         result = {
             'id': drug.id,
@@ -259,7 +282,8 @@ def get_catalyst_detail(catalyst_id):
                 'cash_balance': cash_balance,
                 'cash_balance_date': cash_balance_date,
                 'cash_balance_period': cash_balance_period
-            }
+            },
+            'ai_report': formatted_report
         }
         
         return jsonify(result)
