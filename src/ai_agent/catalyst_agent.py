@@ -7,17 +7,30 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from ..database.database import get_db_session
-from ..database.models import Drug, Company
+from ..database.models import Drug, Company, CatalystReport
 from .tools import CatalystAnalysisTools
+from .llm_client import OpenRouterClient
+import time
+import re
 
 
 class CatalystResearchAgent:
     """AI agent that analyzes biotech catalysts using multiple data sources."""
     
-    def __init__(self, llm_client=None):
+    def __init__(self):
         self.tools = CatalystAnalysisTools()
-        self.llm_client = llm_client  # Will integrate OpenRouter here
         self.session = get_db_session()
+        
+        # Always require LLM client with Claude Sonnet 4
+        try:
+            self.llm_client = OpenRouterClient()
+        except ValueError as e:
+            # Clean up resources before raising
+            self.tools.close()
+            self.session.close()
+            raise ValueError(f"LLM client initialization failed: {e}\n"
+                           "Please set OPENROUTER_API_KEY in your .env file.\n"
+                           "Get your API key at: https://openrouter.ai/keys")
     
     def analyze_catalyst(self, drug_id: int) -> Dict[str, Any]:
         """
@@ -103,103 +116,180 @@ class CatalystResearchAgent:
         else:
             analysis_data["competitive_landscape"] = []
         
-        # 6. Generate Report
-        report = self._generate_report(analysis_data)
+        # 6. Generate Report using LLM
+        # Use LLM for enhanced SEC insights if available
+        if analysis_data["sec_insights"] and drug.drug_name:
+            enhanced_sec = self.llm_client.extract_sec_insights(
+                analysis_data["sec_insights"],
+                drug.drug_name,
+                indication or "unspecified indication"
+            )
+            analysis_data["sec_insights_summary"] = enhanced_sec
+        
+        # Generate LLM-powered report
+        start_time = time.time()
+        llm_report = self.llm_client.analyze_catalyst(analysis_data)
+        if not llm_report:
+            raise RuntimeError("Failed to generate LLM report. Please check your OpenRouter API key and internet connection.")
+        generation_time_ms = int((time.time() - start_time) * 1000)
+        
+        # Save report to database
+        report_record = self._save_report(
+            drug=drug,
+            company=company,
+            report=llm_report,
+            analysis_data=analysis_data,
+            generation_time_ms=generation_time_ms
+        )
         
         return {
             "analysis_data": analysis_data,
-            "report": report
+            "report": llm_report,
+            "report_id": report_record.id
         }
     
-    def _generate_report(self, data: Dict[str, Any]) -> str:
-        """
-        Generate a comprehensive report from the analysis data.
-        For now, this is template-based. Will integrate LLM later.
-        """
-        drug_info = data["drug_info"]
-        historical = data["historical_analysis"]
-        track_record = data["company_track_record"]
-        financial = data["financial_health"]
+    
+    def _save_report(self, drug: Drug, company: Company, report: str, 
+                     analysis_data: Dict[str, Any], generation_time_ms: int) -> CatalystReport:
+        """Save the generated report to the database."""
+        # Extract key metrics from the report
+        success_prob = self._extract_success_probability(report)
+        recommendation = self._extract_recommendation(report)
+        upside, downside = self._extract_price_targets(report)
+        risk_level = self._extract_risk_level(report)
+        summary = self._extract_summary(report)
         
-        report = f"""
-# Catalyst Analysis Report: {drug_info['name']}
-
-## Executive Summary
-
-**Company:** {drug_info['company']} ({drug_info['ticker']})  
-**Drug:** {drug_info['name']}  
-**Stage:** {drug_info['stage']}  
-**Indication:** {drug_info['indication']}  
-**Catalyst Date:** {drug_info['catalyst_date']}  
-
-## Historical Success Rate Analysis
-
-Based on {historical['total_events']} similar historical catalysts:
-- **Success Rate:** {historical['success_rate']:.1f}%
-- **Average Price Movement:** {historical['average_price_change']:.1f}%
-- **Positive Outcomes:** {historical['positive_outcomes']} out of {historical['total_events']}
-
-## Company Track Record
-
-{drug_info['company']} has a total of {track_record['total_drugs']} drugs in their pipeline:
-- **Approved Drugs:** {track_record['approved_drugs']}
-- **Failed Drugs:** {track_record['failed_drugs']}
-- **Overall Success Rate:** {track_record['success_rate']:.1f}%
-
-### Recent Catalyst History:
-"""
+        # Create report record
+        report_record = CatalystReport(
+            drug_id=drug.id,
+            company_id=company.id,
+            catalyst_date=drug.catalyst_date,
+            report_type='full_analysis',
+            model_used='anthropic/claude-sonnet-4',
+            report_markdown=report,
+            report_summary=summary,
+            success_probability=success_prob,
+            price_target_upside=upside,
+            price_target_downside=downside,
+            recommendation=recommendation,
+            risk_level=risk_level,
+            analysis_data=analysis_data,
+            generation_time_ms=generation_time_ms
+        )
         
-        for catalyst in track_record.get('recent_catalysts', [])[:3]:
-            report += f"- {catalyst['date']}: {catalyst['drug']} ({catalyst['stage']}) - {catalyst['outcome'][:100]}...\n"
+        self.session.add(report_record)
+        self.session.commit()
         
-        report += f"""
-
-## Financial Health Assessment
-
-- **Cash on Hand:** ${financial['cash_on_hand']:,.0f}
-- **Quarterly Burn Rate:** ${financial['quarterly_burn_rate']:,.0f}
-- **Estimated Runway:** {financial['runway_months']:.1f} months
-- **Annual Revenue:** ${financial['revenue']:,.0f}
-- **Market Cap:** ${financial['market_cap']:,.0f}
-
-## Risk Assessment
-
-"""
+        return report_record
+    
+    def _extract_success_probability(self, report: str) -> Optional[float]:
+        """Extract success probability from report text."""
+        # Look for patterns like "65-75%" or "45%" or "Probability of Success: 65%"
+        patterns = [
+            r'Probability of Success:\s*(\d+)(?:-\d+)?%',
+            r'Success Probability:\s*(\d+)(?:-\d+)?%',
+            r'Estimated Success Probability:\s*(\d+)(?:-\d+)?%',
+            r'probability.*?(\d+)(?:-\d+)?%'
+        ]
         
-        # Financial risk
-        if financial['runway_months'] < 12:
-            report += "⚠️ **Financial Risk:** Company has less than 12 months of cash runway.\n"
-        elif financial['runway_months'] < 24:
-            report += "⚡ **Moderate Financial Risk:** Company has 12-24 months of runway.\n"
-        else:
-            report += "✅ **Low Financial Risk:** Company has over 24 months of runway.\n"
+        for pattern in patterns:
+            match = re.search(pattern, report, re.IGNORECASE)
+            if match:
+                return float(match.group(1)) / 100.0
         
-        # Historical risk
-        if historical['success_rate'] < 30:
-            report += "⚠️ **Historical Risk:** Similar catalysts have low success rate (<30%).\n"
-        elif historical['success_rate'] < 60:
-            report += "⚡ **Moderate Historical Risk:** Similar catalysts have moderate success rate (30-60%).\n"
-        else:
-            report += "✅ **Low Historical Risk:** Similar catalysts have high success rate (>60%).\n"
+        return None
+    
+    def _extract_recommendation(self, report: str) -> Optional[str]:
+        """Extract investment recommendation from report."""
+        # Look for patterns like "BUY with High Risk" or "HOLD" or "Rating: BUY"
+        patterns = [
+            r'RATING:\s*([A-Z][A-Za-z\s]+)',
+            r'Rating:\s*([A-Z][A-Za-z\s]+)',
+            r'RECOMMENDATION:\s*([A-Z][A-Za-z\s]+)',
+            r'Recommendation:\s*([A-Z][A-Za-z\s]+)',
+            r'\*\*RATING:\s*([A-Z][A-Za-z\s]+)\*\*',
+            r'\*\*([A-Z]+(?:\s+with\s+[A-Za-z\s]+)?)\*\*'
+        ]
         
-        # Competition
-        competitors = data.get('competitive_landscape', [])
-        if len(competitors) > 5:
-            report += f"⚡ **Competitive Risk:** {len(competitors)} competing drugs in similar stage.\n"
+        for pattern in patterns:
+            match = re.search(pattern, report)
+            if match:
+                rec = match.group(1).strip()
+                if any(word in rec.upper() for word in ['BUY', 'SELL', 'HOLD', 'AVOID']):
+                    return rec
         
-        report += "\n## SEC Filing Insights\n\n"
+        return None
+    
+    def _extract_price_targets(self, report: str) -> tuple[Optional[str], Optional[str]]:
+        """Extract upside and downside price targets."""
+        upside = None
+        downside = None
         
-        sec_insights = data.get('sec_insights', [])
-        if sec_insights:
-            for filing in sec_insights[:3]:
-                report += f"**{filing['filing_type']} ({filing['filing_date']}):**\n"
-                for match in filing['matches'][:2]:
-                    report += f"- {match['section']}: {match['excerpt']}\n"
-                report += "\n"
-        else:
-            report += "No recent relevant mentions in SEC filings.\n"
+        # Look for upside patterns
+        upside_patterns = [
+            r'upside.*?(\d+[-–]\d+%)',
+            r'upside.*?(\d+%)',
+            r'(\d+[-–]\d+%)\s*upside',
+            r'(\d+%)\s*upside'
+        ]
         
-        return report
+        for pattern in upside_patterns:
+            match = re.search(pattern, report, re.IGNORECASE)
+            if match:
+                upside = match.group(1)
+                break
+        
+        # Look for downside patterns
+        downside_patterns = [
+            r'downside.*?(\d+[-–]\d+%)',
+            r'downside.*?(\d+%)',
+            r'(\d+[-–]\d+%)\s*(?:downside|decline)',
+            r'(\d+%)\s*(?:downside|decline)'
+        ]
+        
+        for pattern in downside_patterns:
+            match = re.search(pattern, report, re.IGNORECASE)
+            if match:
+                downside = match.group(1)
+                break
+        
+        return upside, downside
+    
+    def _extract_risk_level(self, report: str) -> Optional[str]:
+        """Extract risk level from report."""
+        # Look for explicit risk mentions
+        if re.search(r'high.{0,10}risk|risk.{0,10}high', report, re.IGNORECASE):
+            return "High"
+        elif re.search(r'moderate.{0,10}risk|risk.{0,10}moderate', report, re.IGNORECASE):
+            return "Moderate"
+        elif re.search(r'low.{0,10}risk|risk.{0,10}low', report, re.IGNORECASE):
+            return "Low"
+        
+        return None
+    
+    def _extract_summary(self, report: str) -> Optional[str]:
+        """Extract or generate a brief summary from the report."""
+        # Look for executive summary or overall assessment sections
+        summary_match = re.search(
+            r'(?:Executive Summary|Overall.*Assessment|OVERALL.*ASSESSMENT)[:\n]+(.+?)(?:\n\n|\n#)',
+            report,
+            re.IGNORECASE | re.DOTALL
+        )
+        
+        if summary_match:
+            summary = summary_match.group(1).strip()
+            # Limit to first 500 characters
+            if len(summary) > 500:
+                summary = summary[:497] + "..."
+            return summary
+        
+        # Fallback: use first paragraph after title
+        lines = report.split('\n')
+        for i, line in enumerate(lines[1:], 1):
+            if line.strip() and not line.startswith('#'):
+                return line.strip()[:500]
+        
+        return None
     
     def close(self):
         """Clean up resources."""

@@ -253,3 +253,54 @@ class APICache(Base):
     
     def __repr__(self):
         return f"<APICache(endpoint='{self.endpoint}', last_fetched='{self.last_fetched}')>"
+
+
+class CatalystReport(Base):
+    """AI-generated catalyst analysis reports."""
+    __tablename__ = 'catalyst_reports'
+    
+    id = Column(Integer, primary_key=True)
+    drug_id = Column(Integer, ForeignKey('drugs.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    
+    # Report metadata
+    catalyst_date = Column(DateTime)  # The catalyst date being analyzed
+    report_type = Column(String(50), default='full_analysis')  # full_analysis, quick_update, etc.
+    model_used = Column(String(100), default='anthropic/claude-sonnet-4')  # Track which model was used
+    
+    # Report content
+    report_markdown = Column(Text, nullable=False)  # Full markdown report
+    report_summary = Column(Text)  # Brief summary for quick viewing
+    
+    # Key metrics extracted from report
+    success_probability = Column(Float)  # Extracted probability (e.g., 0.65 for 65%)
+    price_target_upside = Column(String(50))  # e.g., "200-400%"
+    price_target_downside = Column(String(50))  # e.g., "50-80%"
+    recommendation = Column(String(100))  # e.g., "BUY with High Risk"
+    risk_level = Column(String(50))  # e.g., "High", "Moderate", "Low"
+    
+    # Analysis data used
+    analysis_data = Column(JSON)  # Store the raw analysis data for reference
+    
+    # Usage tracking
+    tokens_used = Column(Integer)  # Track token usage for cost monitoring
+    generation_time_ms = Column(Integer)  # Time taken to generate report
+    
+    # Timestamps
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+    
+    # Relationships
+    drug = relationship("Drug")
+    company = relationship("Company")
+    
+    # Indexes for common queries
+    __table_args__ = (
+        Index('idx_report_drug', 'drug_id'),
+        Index('idx_report_company', 'company_id'),
+        Index('idx_report_created', 'created_at'),
+        Index('idx_report_catalyst_date', 'catalyst_date'),
+    )
+    
+    def __repr__(self):
+        return f"<CatalystReport(drug_id={self.drug_id}, created='{self.created_at}', recommendation='{self.recommendation}')>"

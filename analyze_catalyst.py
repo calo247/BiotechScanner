@@ -45,7 +45,11 @@ def list_upcoming_catalysts(days: int = 30):
 
 def analyze_by_id(drug_id: int):
     """Analyze a specific catalyst by drug ID."""
-    agent = CatalystResearchAgent()
+    try:
+        agent = CatalystResearchAgent()
+    except ValueError as e:
+        print(f"Error: {e}")
+        return
     
     print(f"\nAnalyzing catalyst ID {drug_id}...\n")
     
@@ -59,8 +63,11 @@ def analyze_by_id(drug_id: int):
         # Print the report
         print(result["report"])
         
+        # Report is automatically saved to database
+        print(f"\n✓ Report saved to database (ID: {result['report_id']})")
+        
         # Optionally save to file
-        save = input("\nSave report to file? (y/n): ")
+        save = input("\nAlso save report to file? (y/n): ")
         if save.lower() == 'y':
             drug_info = result["analysis_data"]["drug_info"]
             filename = f"catalyst_report_{drug_info['ticker']}_{drug_info['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
