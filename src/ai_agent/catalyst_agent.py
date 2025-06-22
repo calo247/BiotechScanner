@@ -163,7 +163,6 @@ class CatalystResearchAgent:
         report_record = CatalystReport(
             drug_id=drug.id,
             company_id=company.id,
-            catalyst_date=drug.catalyst_date,
             report_type='full_analysis',
             model_used='anthropic/claude-sonnet-4',
             report_markdown=report,

@@ -264,7 +264,6 @@ class CatalystReport(Base):
     company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
     
     # Report metadata
-    catalyst_date = Column(DateTime)  # The catalyst date being analyzed
     report_type = Column(String(50), default='full_analysis')  # full_analysis, quick_update, etc.
     model_used = Column(String(100), default='anthropic/claude-sonnet-4')  # Track which model was used
     
@@ -286,9 +285,8 @@ class CatalystReport(Base):
     tokens_used = Column(Integer)  # Track token usage for cost monitoring
     generation_time_ms = Column(Integer)  # Time taken to generate report
     
-    # Timestamps
+    # Timestamp
     created_at = Column(DateTime, default=utc_now)
-    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     drug = relationship("Drug")
@@ -299,7 +297,6 @@ class CatalystReport(Base):
         Index('idx_report_drug', 'drug_id'),
         Index('idx_report_company', 'company_id'),
         Index('idx_report_created', 'created_at'),
-        Index('idx_report_catalyst_date', 'catalyst_date'),
     )
     
     def __repr__(self):

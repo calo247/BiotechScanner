@@ -1378,3 +1378,11 @@
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/database/models.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/catalyst_agent.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
