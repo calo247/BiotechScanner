@@ -874,3 +874,16 @@ h1 {
         padding: 20px;
     }
 }
+
+/* Cash balance styling */
+.cash-balance {
+    font-weight: 600;
+    color: #27ae60;
+}
+
+.cash-balance small {
+    font-weight: 400;
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-left: 8px;
+}

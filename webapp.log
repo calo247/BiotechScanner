@@ -939,3 +939,246 @@
 127.0.0.1 - - [21/Jun/2025 23:16:36] "GET /static/script.js HTTP/1.1" 200 -
 127.0.0.1 - - [21/Jun/2025 23:16:36] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
 127.0.0.1 - - [21/Jun/2025 23:16:36] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:11] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:11] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:11] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:15] "GET /catalyst/3025?id=3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:15] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:15] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:15] "GET /api/catalysts/3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:17] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:17:17] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:17] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:17:17] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:23:01] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:23:01] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:23:01] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:23:01] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:24:59] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:24:59] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:24:59] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:24:59] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:02] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:02] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:02] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:02] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:05] "GET /catalyst/3025?id=3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:05] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:05] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:05] "GET /api/catalysts/3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:08] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:25:09] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:09] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:25:09] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:28:43] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:28:43] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:28:43] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:28:43] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 23:32:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:07] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:07] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:07] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:07] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:07] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:18] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:18] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:18] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:18] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:47] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:47] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:47] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:47] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:32:58] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:33:11] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:33:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:33:11] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:33:11] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:28] "GET /catalyst/3025?id=3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:28] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:28] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:28] "GET /api/catalysts/3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:31] "GET /catalyst/3025?id=3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:31] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:31] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:31] "GET /api/catalysts/3025 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:33] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:33] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:33] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:34] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:38] "GET /catalyst/69?id=69 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:38] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:38] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:38] "GET /api/catalysts/69 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:42] "GET /catalyst/231?id=231 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:34:42] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:42] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:34:42] "GET /api/catalysts/231 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/src/queries/company_queries.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 23:37:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:37:36] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:36] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:36] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:36] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:36] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:37:48] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:37:48] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:48] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:37:48] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:51] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:52] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:52] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:52] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:52] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:52] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:53] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:53] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:53] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:53] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:55] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:55] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:55] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:55] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:59] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:39:59] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:59] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:39:59] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/src/queries/company_queries.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/queries/company_queries.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 23:43:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:02] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:02] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:02] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:02] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:02] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:15] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:15] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:15] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:15] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:43:43] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:43:58] "GET /api/catalysts/upcoming?stage=&search=MRNA&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:44:11] "GET /catalyst/431?id=431 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:44:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:44:11] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:44:11] "GET /api/catalysts/431 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:19] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:19] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:19] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:19] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:19] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [21/Jun/2025 23:45:24] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:24] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:24] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:24] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:24] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:25] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:26] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:26] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:26] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:45:26] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:58] "GET /catalyst/3928?id=3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:58] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:58] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:45:58] "GET /api/catalysts/3928 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:02] "GET /catalyst/53?id=53 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:02] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:02] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:02] "GET /api/catalysts/53 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:06] "GET /catalyst/68?id=68 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:06] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:06] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:06] "GET /api/catalysts/68 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:21] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:46:21] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:21] "[36mGET /static/detail.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:46:21] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+ * Detected change in '/home/tyler/BiotechScanner/src/queries/company_queries.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/webapp/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+127.0.0.1 - - [21/Jun/2025 23:58:47] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:58:47] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:58:47] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:58:47] "[36mGET /static/range-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:58:47] "[36mGET /static/stock-price-slider.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:58:47] "GET /api/catalysts/upcoming?stage=&search=&sort_by=date&sort_dir=asc&page=1&per_page=25 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:59:01] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:59:01] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jun/2025 23:59:01] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [21/Jun/2025 23:59:01] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2025 00:00:53] "GET /catalyst/3535?id=3535 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2025 00:00:53] "GET /static/detail.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2025 00:00:53] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2025 00:00:53] "GET /api/catalysts/3535 HTTP/1.1" 200 -
+127.0.0.1 - - [22/Jun/2025 00:00:53] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/tools.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/catalyst_agent.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/analyze_catalyst.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/catalyst_agent.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/tools.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006
+ * Detected change in '/home/tyler/BiotechScanner/src/ai_agent/tools.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 577-417-006

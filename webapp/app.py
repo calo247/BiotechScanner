@@ -209,6 +209,18 @@ def get_catalyst_detail(catalyst_id):
                 'market_cap': sd.market_cap
             } for sd in recent_data]
         
+        # Get the most recent cash balance using the query module
+        cash_data = CompanyQuery(db).get_latest_cash_balance(drug.company_id)
+        
+        if cash_data:
+            cash_balance = cash_data['value']
+            cash_balance_date = cash_data['date']
+            cash_balance_period = cash_data['period']
+        else:
+            cash_balance = None
+            cash_balance_date = None
+            cash_balance_period = None
+        
         # Format response with comprehensive details
         result = {
             'id': drug.id,
@@ -242,6 +254,11 @@ def get_catalyst_detail(catalyst_id):
                     'week_52_low': latest_stock.week_52_low if latest_stock else None
                 },
                 'recent_history': recent_stock_data
+            },
+            'financial_data': {
+                'cash_balance': cash_balance,
+                'cash_balance_date': cash_balance_date,
+                'cash_balance_period': cash_balance_period
             }
         }
         

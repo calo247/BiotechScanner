@@ -122,6 +122,12 @@ function displayCatalystDetail(catalyst) {
                             <label>Volume:</label>
                             <span>${volume}</span>
                         </div>
+                        ${catalyst.financial_data && catalyst.financial_data.cash_balance ? `
+                        <div class="info-item">
+                            <label>Cash Balance:</label>
+                            <span class="cash-balance">${formatCashBalance(catalyst.financial_data.cash_balance)} <small>(${catalyst.financial_data.cash_balance_period})</small></span>
+                        </div>
+                        ` : ''}
                         ${stockData.pe_ratio ? `
                         <div class="info-item">
                             <label>P/E Ratio:</label>
@@ -190,6 +196,14 @@ function formatMarketCap(value) {
     if (!value) return 'N/A';
     if (value >= 1e9) return '$' + (value / 1e9).toFixed(1) + 'B';
     if (value >= 1e6) return '$' + (value / 1e6).toFixed(1) + 'M';
+    return '$' + value.toFixed(0);
+}
+
+function formatCashBalance(value) {
+    if (!value && value !== 0) return 'N/A';
+    if (value >= 1e9) return '$' + (value / 1e9).toFixed(2) + 'B';
+    if (value >= 1e6) return '$' + (value / 1e6).toFixed(1) + 'M';
+    if (value >= 1e3) return '$' + (value / 1e3).toFixed(0) + 'K';
     return '$' + value.toFixed(0);
 }
 

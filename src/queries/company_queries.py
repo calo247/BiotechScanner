@@ -1,7 +1,8 @@
 """Query builder for company-related database operations."""
 
 from typing import Optional, List, Dict, Any
-from sqlalchemy import func, and_
+from datetime import datetime, timedelta
+from sqlalchemy import func, and_, desc
 from sqlalchemy.orm import Session, joinedload
 
 from ..database.models import Company, Drug, StockData, SECFiling, FinancialMetric
@@ -138,3 +139,22 @@ class CompanyQuery:
             'total_drugs': total_drugs,
             'drugs_with_catalysts': drugs_with_catalysts
         }
+    
+    def get_latest_cash_balance(self, company_id: int) -> Optional[Dict[str, Any]]:
+        """Get the most recent cash balance for a company."""
+        latest_cash = self.session.query(FinancialMetric).filter(
+            FinancialMetric.company_id == company_id,
+            FinancialMetric.concept == 'CashAndCashEquivalentsAtCarryingValue'
+        ).order_by(
+            FinancialMetric.fiscal_year.desc(),
+            FinancialMetric.fiscal_period.desc()
+        ).first()
+        
+        if latest_cash:
+            return {
+                'value': latest_cash.value,
+                'date': latest_cash.filed_date.isoformat() if latest_cash.filed_date else None,
+                'period': f"{latest_cash.fiscal_year} {latest_cash.fiscal_period}"
+            }
+        
+        return None
