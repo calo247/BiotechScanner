@@ -19,12 +19,30 @@
                         <option value="Phase 1">Phase 1</option>
                         <option value="Phase 2">Phase 2</option>
                         <option value="Phase 3">Phase 3</option>
+                        <option value="Phase 1/2">Phase 1/2</option>
+                        <option value="Phase 2/3">Phase 2/3</option>
                         <option value="Approved">Approved</option>
                         <option value="NDA">NDA/BLA</option>
+                        <option value="Preclinical">Preclinical</option>
+                    </select>
+                </div>
+                <div class="filter-group market-cap-filter-group">
+                    <div id="market-cap-slider"></div>
+                </div>
+                <div class="filter-group">
+                    <label for="days-filter">Time Range:</label>
+                    <select id="days-filter" onchange="loadUpcomingCatalysts()">
+                        <option value="">All Upcoming</option>
+                        <option value="7">Next 7 Days</option>
+                        <option value="30">Next 30 Days</option>
+                        <option value="60">Next 60 Days</option>
+                        <option value="90">Next 90 Days</option>
+                        <option value="180">Next 6 Months</option>
+                        <option value="365">Next Year</option>
                     </select>
                 </div>
                 <div class="filter-group search-group">
-                    <input type="text" id="search-filter" placeholder="Search" oninput="filterTable()">
+                    <input type="text" id="search-filter" placeholder="Search ticker, company, drug..." oninput="filterTable()">
                 </div>
             </div>
 
@@ -53,6 +71,7 @@
 
     </div>
 
+    <script src="{{ url_for('static', filename='range-slider.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

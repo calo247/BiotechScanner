@@ -2,18 +2,42 @@
 let currentPage = 1;
 let sortState = { column: 'date', direction: 'asc' };
 let currentData = [];
+let marketCapSlider = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    initializeMarketCapSlider();
     loadUpcomingCatalysts();
     setupSortHandlers();
 });
 
 
+// Initialize market cap slider
+function initializeMarketCapSlider() {
+    const container = document.getElementById('market-cap-slider');
+    marketCapSlider = new MarketCapRangeSlider(container, {
+        min: 0,
+        max: 1000000000000, // 1 trillion
+        currentMin: 0,
+        currentMax: 1000000000000,
+        onChange: (min, max) => {
+            // Debounce the API call
+            clearTimeout(window.marketCapTimeout);
+            window.marketCapTimeout = setTimeout(() => {
+                loadUpcomingCatalysts(1); // Reset to page 1
+            }, 300);
+        }
+    });
+}
+
 // Load upcoming catalysts
 async function loadUpcomingCatalysts(page = 1) {
     const stageFilter = document.getElementById('stage-filter').value;
+    const daysFilter = document.getElementById('days-filter').value;
     const searchTerm = document.getElementById('search-filter').value;
+    
+    // Get market cap range from slider
+    const marketCapRange = marketCapSlider ? marketCapSlider.getValues() : { min: 0, max: 1000000000000 };
     
     document.getElementById('upcoming-loading').style.display = 'block';
     document.getElementById('upcoming-content').style.display = 'none';
@@ -21,12 +45,19 @@ async function loadUpcomingCatalysts(page = 1) {
     try {
         const params = new URLSearchParams({
             stage: stageFilter,
+            days: daysFilter,
             search: searchTerm,
             sort_by: sortState.column,
             sort_dir: sortState.direction,
             page: page,
             per_page: 25
         });
+        
+        // Add market cap range parameters only if not full range
+        if (marketCapRange.min > 0 || marketCapRange.max < 1000000000000) {
+            params.append('min_marketcap', marketCapRange.min);
+            params.append('max_marketcap', marketCapRange.max);
+        }
         
         const response = await fetch(`/api/catalysts/upcoming?${params}`);
         const data = await response.json();
@@ -48,6 +79,9 @@ async function loadUpcomingCatalysts(page = 1) {
 // Display upcoming catalysts
 function displayUpcomingCatalysts(catalysts) {
     const tbody = document.getElementById('upcoming-tbody');
+    
+    // Update filter status
+    updateFilterStatus();
     
     if (catalysts.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No upcoming catalysts found</td></tr>';
@@ -244,5 +278,49 @@ function updateSortIndicators() {
 // Navigate to catalyst detail page
 function viewCatalystDetail(catalystId) {
     window.location.href = `/catalyst/${catalystId}?id=${catalystId}`;
+}
+
+// Update filter status display
+function updateFilterStatus() {
+    const activeFilters = [];
+    
+    const stage = document.getElementById('stage-filter').value;
+    if (stage) activeFilters.push(`Stage: ${stage}`);
+    
+    // Market cap range from slider
+    if (marketCapSlider) {
+        const range = marketCapSlider.getValues();
+        if (range.min > 0 || range.max < 1000000000000) {
+            const minStr = marketCapSlider.formatValue(range.min);
+            const maxStr = marketCapSlider.formatValue(range.max);
+            activeFilters.push(`Market Cap: ${minStr} - ${maxStr}`);
+        }
+    }
+    
+    const days = document.getElementById('days-filter').value;
+    if (days) {
+        const daysText = document.getElementById('days-filter').selectedOptions[0].text;
+        activeFilters.push(`Time: ${daysText}`);
+    }
+    
+    const search = document.getElementById('search-filter').value;
+    if (search) activeFilters.push(`Search: "${search}"`);
+    
+    // Update or create filter status element
+    let filterStatus = document.getElementById('filter-status');
+    if (!filterStatus) {
+        filterStatus = document.createElement('div');
+        filterStatus.id = 'filter-status';
+        filterStatus.className = 'filter-status';
+        const filtersDiv = document.querySelector('.filters');
+        filtersDiv.parentNode.insertBefore(filterStatus, filtersDiv.nextSibling);
+    }
+    
+    if (activeFilters.length > 0) {
+        filterStatus.innerHTML = `<strong>Active Filters:</strong> ${activeFilters.join(' | ')}`;
+        filterStatus.style.display = 'block';
+    } else {
+        filterStatus.style.display = 'none';
+    }
 }
 

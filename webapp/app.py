@@ -11,6 +11,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.database.database import get_db
 from src.database.models import Drug, Company, StockData, HistoricalCatalyst
+from src.queries import CatalystQuery, CompanyQuery
+from src.queries.catalyst_queries import HistoricalCatalystQuery
 from sqlalchemy import and_, or_, func
 
 app = Flask(__name__)
@@ -31,136 +33,49 @@ def get_upcoming_catalysts():
     """Get upcoming catalyst events."""
     # Get query parameters
     stage_filter = request.args.get('stage', '')
+    days_filter = request.args.get('days', '')
     search_term = request.args.get('search', '')
     sort_by = request.args.get('sort_by', 'date')
     sort_dir = request.args.get('sort_dir', 'asc')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))
     
+    # Get market cap range parameters
+    min_marketcap = request.args.get('min_marketcap', type=float)
+    max_marketcap = request.args.get('max_marketcap', type=float)
+    
     with get_db() as db:
-        # Base query - drugs with catalysts
-        query = db.query(Drug).join(Company).filter(
-            Drug.has_catalyst == True,
-            Drug.catalyst_date.isnot(None)
-        )
+        # Build query using the new CatalystQuery builder
+        query = CatalystQuery(db).with_stock_data()
         
-        # Filter by date - only show future catalysts
-        today = datetime.now(timezone.utc).date()
-        query = query.filter(
-            func.date(Drug.catalyst_date) >= today
-        )
+        # Apply time range filter
+        if days_filter:
+            query = query.upcoming(days=int(days_filter))
+        else:
+            query = query.upcoming()  # All future catalysts
         
-        # Filter by stage if provided
+        # Apply stage filter
         if stage_filter:
-            query = query.filter(Drug.stage.like(f'%{stage_filter}%'))
+            query = query.by_stage(stage_filter)
         
-        # Filter by search term if provided
+        # Apply market cap range filter
+        if min_marketcap is not None or max_marketcap is not None:
+            query = query.by_market_cap_range(min_marketcap, max_marketcap)
+        
+        # Apply search filter
         if search_term:
-            search_pattern = f'%{search_term}%'
-            query = query.filter(
-                or_(
-                    Company.ticker.ilike(search_pattern),
-                    Company.name.ilike(search_pattern),
-                    Drug.drug_name.ilike(search_pattern),
-                    Drug.stage.ilike(search_pattern),
-                    Drug.mechanism_of_action.ilike(search_pattern),
-                    Drug.note.ilike(search_pattern)
-                )
-            )
+            query = query.search(search_term)
         
         # Apply sorting
-        if sort_by == 'date':
-            sort_column = Drug.catalyst_date
-        elif sort_by == 'ticker':
-            sort_column = Company.ticker
-        elif sort_by == 'company':
-            sort_column = Company.name
-        elif sort_by == 'stage':
-            sort_column = Drug.stage
-        elif sort_by == 'marketcap':
-            # Join with latest stock data for market cap sorting
-            latest_stock_subq = db.query(
-                StockData.company_id,
-                func.max(StockData.date).label('max_date')
-            ).group_by(StockData.company_id).subquery()
-            
-            query = query.outerjoin(
-                latest_stock_subq,
-                Drug.company_id == latest_stock_subq.c.company_id
-            ).outerjoin(
-                StockData,
-                and_(
-                    StockData.company_id == latest_stock_subq.c.company_id,
-                    StockData.date == latest_stock_subq.c.max_date
-                )
-            )
-            sort_column = StockData.market_cap
-        elif sort_by == 'price':
-            # Join with latest stock data for price sorting
-            latest_stock_subq = db.query(
-                StockData.company_id,
-                func.max(StockData.date).label('max_date')
-            ).group_by(StockData.company_id).subquery()
-            
-            query = query.outerjoin(
-                latest_stock_subq,
-                Drug.company_id == latest_stock_subq.c.company_id
-            ).outerjoin(
-                StockData,
-                and_(
-                    StockData.company_id == latest_stock_subq.c.company_id,
-                    StockData.date == latest_stock_subq.c.max_date
-                )
-            )
-            sort_column = StockData.close
-        else:
-            sort_column = Drug.catalyst_date
+        query = query.order_by(sort_by, sort_dir)
         
-        if sort_dir == 'desc':
-            query = query.order_by(sort_column.desc())
-        else:
-            query = query.order_by(sort_column.asc())
-        
-        # Get total count
-        total = query.count()
-        
-        # Paginate
-        offset = (page - 1) * per_page
-        drugs = query.offset(offset).limit(per_page).all()
-        
-        # Get latest stock data for each company
-        company_ids = [drug.company_id for drug in drugs]
-        latest_prices = {}
-        
-        if company_ids:
-            # Subquery to get latest date for each company
-            subq = db.query(
-                StockData.company_id,
-                func.max(StockData.date).label('max_date')
-            ).filter(
-                StockData.company_id.in_(company_ids)
-            ).group_by(StockData.company_id).subquery()
-            
-            # Get the actual stock data for latest dates
-            stock_data = db.query(StockData).join(
-                subq,
-                and_(
-                    StockData.company_id == subq.c.company_id,
-                    StockData.date == subq.c.max_date
-                )
-            ).all()
-            
-            for sd in stock_data:
-                latest_prices[sd.company_id] = {
-                    'close': sd.close,
-                    'market_cap': sd.market_cap,
-                    'date': sd.date.isoformat() if sd.date else None
-                }
+        # Get paginated results
+        result = query.paginate(page=page, per_page=per_page)
         
         # Format response
         results = []
-        for drug in drugs:
-            company_price_data = latest_prices.get(drug.company_id, {})
+        for drug in result['results']:
+            company_stock = result['stock_data'].get(drug.company_id, {})
             
             results.append({
                 'id': drug.id,
@@ -168,9 +83,9 @@ def get_upcoming_catalysts():
                 'company': {
                     'ticker': drug.company.ticker,
                     'name': drug.company.name,
-                    'market_cap': company_price_data.get('market_cap'),
-                    'stock_price': company_price_data.get('close'),
-                    'price_date': company_price_data.get('date')
+                    'market_cap': company_stock.get('market_cap'),
+                    'stock_price': company_stock.get('close'),
+                    'price_date': company_stock.get('date')
                 },
                 'stage': drug.stage,
                 'catalyst_date': drug.catalyst_date.isoformat() if drug.catalyst_date else None,
@@ -183,10 +98,10 @@ def get_upcoming_catalysts():
         
         return jsonify({
             'results': results,
-            'total': total,
-            'page': page,
-            'per_page': per_page,
-            'total_pages': (total + per_page - 1) // per_page
+            'total': result['pagination']['total'],
+            'page': result['pagination']['page'],
+            'per_page': result['pagination']['per_page'],
+            'total_pages': result['pagination']['total_pages']
         })
 
 @app.route('/api/catalysts/historical', methods=['GET'])
@@ -200,35 +115,28 @@ def get_historical_catalysts():
     per_page = int(request.args.get('per_page', 50))
     
     with get_db() as db:
-        # Base query
-        query = db.query(HistoricalCatalyst).join(Company)
+        # Build query using the new HistoricalCatalystQuery builder
+        query = HistoricalCatalystQuery(db)
         
-        # Filter by date range
+        # Apply filters
         if days_back > 0:
-            start_date = datetime.now(timezone.utc) - timedelta(days=days_back)
-            query = query.filter(HistoricalCatalyst.catalyst_date >= start_date)
+            query = query.past_days(days_back)
         
-        # Filter by stage if provided
         if stage_filter:
-            query = query.filter(HistoricalCatalyst.stage.like(f'%{stage_filter}%'))
+            query = query.by_stage(stage_filter)
         
-        # Filter by ticker if provided
         if ticker_filter:
-            query = query.filter(HistoricalCatalyst.ticker == ticker_filter.upper())
+            query = query.by_ticker(ticker_filter)
         
-        # Order by catalyst date descending (most recent first)
-        query = query.order_by(HistoricalCatalyst.catalyst_date.desc())
+        # Order by date descending (most recent first)
+        query = query.order_by_date(ascending=False)
         
-        # Get total count
-        total = query.count()
-        
-        # Paginate
-        offset = (page - 1) * per_page
-        catalysts = query.offset(offset).limit(per_page).all()
+        # Get paginated results
+        result = query.paginate(page=page, per_page=per_page)
         
         # Format response
         results = []
-        for catalyst in catalysts:
+        for catalyst in result['results']:
             results.append({
                 'id': catalyst.id,
                 'ticker': catalyst.ticker,
@@ -243,10 +151,10 @@ def get_historical_catalysts():
         
         return jsonify({
             'results': results,
-            'total': total,
-            'page': page,
-            'per_page': per_page,
-            'total_pages': (total + per_page - 1) // per_page
+            'total': result['total'],
+            'page': result['page'],
+            'per_page': result['per_page'],
+            'total_pages': result['total_pages']
         })
 
 @app.route('/api/catalysts/<int:catalyst_id>', methods=['GET'])

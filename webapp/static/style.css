@@ -94,21 +94,27 @@ h1 {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     display: flex;
-    gap: 20px;
+    gap: 15px;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
 }
 
 .filter-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+}
+
+.filter-group.market-cap-filter-group {
+    flex: 2;
+    min-width: 300px;
 }
 
 .filter-group label {
     font-weight: 500;
     color: #666;
+    white-space: nowrap;
+    font-size: 14px;
 }
 
 .filter-group select,
@@ -117,14 +123,46 @@ h1 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    background-color: white;
+    transition: all 0.2s ease;
 }
 
-.search-group input {
-    min-width: 250px;
+.filter-group select:hover,
+.filter-group input:hover {
+    border-color: #999;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
 }
 
 .search-group {
-    margin-left: auto;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-group input {
+    width: 100%;
+}
+
+/* Filter status display */
+.filter-status {
+    background-color: #e3f2fd;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+    display: none;
+}
+
+.filter-status strong {
+    color: #0d47a1;
+    font-weight: 600;
 }
 
 /* Table Container */
@@ -243,6 +281,32 @@ h1 {
 .stage-badge.phase-1 {
     background: #f8d7da;
     color: #721c24;
+}
+
+.stage-badge.phase-1-2 {
+    background: #fce4ec;
+    color: #880e4f;
+}
+
+.stage-badge.phase-2-3 {
+    background: #e8eaf6;
+    color: #283593;
+}
+
+.stage-badge.approved {
+    background: #c8e6c9;
+    color: #1b5e20;
+}
+
+.stage-badge.nda,
+.stage-badge.nda-bla {
+    background: #bbdefb;
+    color: #0d47a1;
+}
+
+.stage-badge.preclinical {
+    background: #f3e5f5;
+    color: #4a148c;
 }
 
 /* Outcome cell styling */
@@ -522,6 +586,143 @@ h1 {
 .no-data {
     color: #999;
     font-style: italic;
+}
+
+/* Market Cap Range Slider */
+.market-cap-slider {
+    padding: 10px 0;
+    margin: 10px 0;
+}
+
+.slider-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.slider-label {
+    font-weight: 500;
+    color: #666;
+    font-size: 14px;
+}
+
+.slider-values {
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.slider-values .min-value,
+.slider-values .max-value {
+    color: #3498db;
+}
+
+.slider-values .separator {
+    margin: 0 8px;
+    color: #999;
+}
+
+.reset-button {
+    padding: 4px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+}
+
+.reset-button:hover {
+    background: #f8f9fa;
+    border-color: #999;
+}
+
+.slider-container {
+    position: relative;
+    height: 40px;
+    margin: 30px 0 40px 0;
+}
+
+.slider-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.slider-range {
+    position: absolute;
+    top: 50%;
+    height: 6px;
+    background: #3498db;
+    border-radius: 3px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.slider-handle {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    z-index: 2;
+}
+
+.slider-handle:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.slider-handle:active {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 2px 10px rgba(52, 152, 219, 0.4);
+}
+
+.slider-scale {
+    position: relative;
+    height: 40px;
+    margin-top: 10px;
+}
+
+.scale-mark {
+    position: absolute;
+    transform: translateX(-50%);
+}
+
+.scale-tick {
+    width: 1px;
+    height: 8px;
+    background: #ccc;
+    margin: 0 auto;
+}
+
+.scale-label {
+    margin-top: 5px;
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+}
+
+/* Hide overlapping labels on mobile */
+@media (max-width: 768px) {
+    .scale-mark:nth-child(even) .scale-label {
+        display: none;
+    }
 }
 
 /* Responsive */
