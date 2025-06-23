@@ -244,31 +244,3 @@ class HybridEmbedder:
         return embeddings
 
 
-def batch_encode_filings(chunks: List[Dict], model: Union[EmbeddingModel, HybridEmbedder],
-                        batch_size: int = 1000) -> List[Tuple[np.ndarray, List[Dict]]]:
-    """
-    Encode large numbers of chunks in batches to manage memory.
-    
-    Args:
-        chunks: All chunks to encode
-        model: Embedding model to use
-        batch_size: Number of chunks per batch
-        
-    Yields:
-        Tuples of (embeddings, chunk_batch)
-    """
-    total_batches = (len(chunks) + batch_size - 1) // batch_size
-    
-    for i in tqdm(range(0, len(chunks), batch_size), desc="Encoding batches", total=total_batches):
-        batch = chunks[i:i + batch_size]
-        texts = [chunk['text'] for chunk in batch]
-        
-        # Encode batch
-        embeddings = model.encode_texts(texts, show_progress=False)
-        
-        yield embeddings, batch
-        
-        # Force garbage collection to free memory
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
