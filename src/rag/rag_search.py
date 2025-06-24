@@ -66,7 +66,8 @@ class RAGSearchEngine:
                 'company_id': filing.company_id,
                 'filing_type': filing.filing_type,
                 'filing_date': filing.filing_date.isoformat() if filing.filing_date else None,
-                'accession_number': filing.accession_number
+                'accession_number': filing.accession_number,
+                'file_path': filing.file_path  # Add file path for on-demand loading
             }
             
             # Process filing into chunks
@@ -191,9 +192,12 @@ class RAGSearchEngine:
         if filing_types:
             results = [r for r in results if r.get('filing_type') in filing_types]
         
-        # Enhance results with additional metadata
+        # Enhance results with additional metadata and load text on-demand
         enhanced_results = []
         for result in results:
+            # Load the chunk text on-demand
+            result['text'] = self.load_chunk_text(result)
+            
             # Get filing info
             filing = self.db_session.query(SECFiling).filter_by(
                 id=result['filing_id']
@@ -242,6 +246,43 @@ class RAGSearchEngine:
         results.sort(key=lambda x: x['rerank_score'], reverse=True)
         
         return results
+    
+    def load_chunk_text(self, result: Dict) -> str:
+        """
+        Load text for a chunk from the filing on-demand.
+        
+        Args:
+            result: Search result dictionary with file_path and char positions
+            
+        Returns:
+            Text content of the chunk
+        """
+        file_path = result.get('file_path')
+        char_start = result.get('char_start', 0)
+        char_end = result.get('char_end')
+        
+        if not file_path:
+            return "[Text not available - missing file path]"
+        
+        try:
+            # Load the filing
+            full_text = self.processor.load_filing(file_path)
+            
+            # Extract the chunk text
+            if char_end:
+                chunk_text = full_text[char_start:char_end]
+            else:
+                # Fallback - take a reasonable chunk from start position
+                chunk_text = full_text[char_start:char_start + 2000]
+            
+            # Clean the text
+            chunk_text = self.processor.clean_text(chunk_text)
+            
+            return chunk_text.strip()
+            
+        except Exception as e:
+            logger.error(f"Error loading chunk text from {file_path}: {e}")
+            return f"[Error loading text: {str(e)}]"
     
     def get_context_window(self, result: Dict, window_size: int = 1000) -> str:
         """

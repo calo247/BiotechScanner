@@ -145,10 +145,11 @@ class FAISSIndex:
             chunk_id = self.next_id
             self.next_id += 1
             
-            # Store metadata
+            # Store metadata - WITHOUT full text to save memory
             self.metadata[chunk_id] = {
                 'idx': current_idx + i,
-                'text': chunk['text'],
+                # 'text': chunk['text'],  # REMOVED to save memory - load on demand instead
+                'file_path': chunk.get('file_path'),  # Path to compressed filing
                 'section': chunk.get('section', 'UNKNOWN'),
                 'filing_id': chunk.get('filing_id'),
                 'company_id': chunk.get('company_id'),
@@ -235,7 +236,10 @@ class FAISSIndex:
             results.append({
                 'chunk_id': chunk_id,
                 'score': float(dist),  # Lower is better for L2 distance
-                'text': metadata['text'],
+                # 'text': metadata['text'],  # Text will be loaded on demand
+                'file_path': metadata.get('file_path'),
+                'char_start': metadata.get('char_start'),
+                'char_end': metadata.get('char_end'),
                 'section': metadata['section'],
                 'filing_id': metadata['filing_id'],
                 'company_id': metadata['company_id'],

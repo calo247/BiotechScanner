@@ -160,7 +160,7 @@ class SECDocumentProcessor:
                         'section': section_name,
                         'char_start': section_start + pos,
                         'char_end': section_start + chunk_end,
-                        **metadata
+                        **metadata  # This will include file_path from metadata
                     }
                     chunks.append(chunk_data)
                     chunk_id += 1
