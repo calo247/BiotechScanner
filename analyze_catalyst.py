@@ -8,10 +8,38 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from sqlalchemy import and_
+import logging
 
 from src.database.database import get_db_session
 from src.database.models import Drug, Company
 from src.ai_agent.catalyst_agent import CatalystResearchAgent
+
+
+def setup_logging():
+    """Set up logging to both console and file."""
+    # Store all output in a list to save later
+    class LogCapture:
+        def __init__(self):
+            self.terminal = sys.stdout
+            self.log_content = []
+            
+        def write(self, message):
+            self.terminal.write(message)
+            self.terminal.flush()
+            if message.strip():  # Store non-empty lines
+                self.log_content.append(message.rstrip())
+            
+        def flush(self):
+            self.terminal.flush()
+            
+        def get_content(self):
+            return '\n'.join(self.log_content)
+    
+    # Replace stdout with our capture object
+    log_capture = LogCapture()
+    sys.stdout = log_capture
+    
+    return log_capture
 
 
 def list_upcoming_catalysts(days: int = 30):
@@ -47,6 +75,9 @@ def list_upcoming_catalysts(days: int = 30):
 
 def analyze_by_id(drug_id: int):
     """Analyze a specific catalyst by drug ID."""
+    # Set up logging
+    log_capture = setup_logging()
+    
     try:
         agent = CatalystResearchAgent()
     except ValueError as e:
@@ -62,22 +93,46 @@ def analyze_by_id(drug_id: int):
             print(f"Error: {result['error']}")
             return
         
-        # Print RAG search statistics
+        # Print RAG search statistics (for terminal/log only, not in the report)
         if "sec_search_stats" in result["analysis_data"]:
             stats = result["analysis_data"]["sec_search_stats"]
+            print("\n" + "="*60)
+            print("📈 RESEARCH STATISTICS (INTERNAL - NOT IN REPORT)")
             print("="*60)
-            print("SEC FILING SEARCH STATISTICS (RAG)")
+            
+            # Check if it was LLM-driven
+            if stats.get('llm_driven', False):
+                print(f"✓ Search Method: {stats['search_method']}")
+                print(f"✓ Total Searches Performed: {stats['total_searches']}")
+                print(f"✓ Total Results Found: {stats['total_results']}")
+                print(f"✓ Unique SEC Filings Accessed: {stats.get('unique_filings_count', 0)}")
+                print(f"✓ Press Releases Found: {stats.get('press_releases_found', 0)}")
+                
+                # Show search iterations
+                if 'search_iterations' in stats:
+                    print("\n📋 Detailed Search Log:")
+                    for search in stats['search_iterations']:
+                        source_type = "PRESS RELEASES" if search.get('search_type') == 'press_release' else "SEC FILINGS"
+                        print(f"\n  🔍 Search {search['iteration']} ({source_type}):")
+                        print(f"     Query: '{search['query']}'")
+                        print(f"     Reasoning: {search['reasoning']}")
+                        print(f"     Results Found: {search['results_found']}")
+                        if search.get('key_findings'):
+                            print(f"     AI Findings Summary:")
+                            # Indent the findings for better readability
+                            for line in search['key_findings'].split('\n'):
+                                if line.strip():
+                                    print(f"       {line.strip()}")
+            else:
+                # Fallback to old format
+                print(f"✓ RAG Search Used: {stats.get('rag_search_used', True)}")
+                print(f"✓ Total Index Chunks: {stats.get('total_index_chunks', 'N/A'):,}")
+                print(f"✓ Query: '{stats.get('query', 'N/A')}'")
+                print(f"✓ Results Found: {stats.get('results_found', 0)}")
+                print(f"✓ Unique SEC Filings Matched: {stats.get('unique_filings_matched', 0)}")
+            
             print("="*60)
-            print(f"✓ RAG Search Used: {stats['rag_search_used']}")
-            print(f"✓ Total Index Chunks: {stats['total_index_chunks']:,}")
-            print(f"✓ Query: '{stats['query']}'")
-            print(f"✓ Results Found: {stats['results_found']}")
-            print(f"✓ Unique SEC Filings Matched: {stats['unique_filings_matched']}")
-            print(f"✓ Filing Types Searched: {', '.join(stats['filing_types_searched'])}")
-            print(f"✓ Filing Types Found: {', '.join(stats['filing_types_found']) if stats['filing_types_found'] else 'None'}")
-            if stats['relevance_score_range']['best'] is not None:
-                print(f"✓ Relevance Score Range: {stats['relevance_score_range']['best']:.4f} - {stats['relevance_score_range']['worst']:.4f}")
-            print(f"✓ Search Method: {stats['search_method']}")
+            print("\n📊 CATALYST ANALYSIS REPORT")
             print("="*60)
             print()
         
@@ -118,13 +173,22 @@ def analyze_by_id(drug_id: int):
                     analysis_data_json["drug_info"]["catalyst_date"] = str(analysis_data_json["drug_info"]["catalyst_date"])
             json.dump(analysis_data_json, f, indent=2, default=str)
         
+        # Save the terminal log
+        log_file = report_dir / f"{timestamp}_terminal_log.txt"
+        with open(log_file, 'w', encoding='utf-8') as f:
+            f.write(log_capture.get_content())
+        
         print(f"\n✓ Report automatically saved to: {report_file}")
         print(f"✓ Analysis data saved to: {data_file}")
+        print(f"✓ Terminal log saved to: {log_file}")
     
     except Exception as e:
         print(f"Error during analysis: {str(e)}")
     finally:
         agent.close()
+        # Restore stdout
+        if hasattr(sys.stdout, 'terminal'):
+            sys.stdout = sys.stdout.terminal
 
 
 def analyze_by_ticker(ticker: str):

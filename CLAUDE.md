@@ -476,12 +476,59 @@ results = engine.search_by_ticker(
 ```
 
 ### Integration with AI Agent
-The AI agent's `search_sec_filings` method now:
-1. Uses RAG search for semantic understanding
-2. Loads text on-demand from compressed filings
-3. Supports company-specific filtering for targeted research
-4. Returns expanded context windows
-5. **Requires RAG to be available** (no fallback - fails fast if index not loaded)
+The AI agent now uses **LLM-driven dynamic search** with both SEC filings and press releases:
+
+1. **Intelligent Search Loop**: The LLM decides what to search for based on:
+   - Initial catalyst context (drug, stage, indication)
+   - Previous search findings
+   - What information is still missing
+   - Whether to search SEC filings or press releases
+
+2. **Adaptive Research**: Each search iteration:
+   - LLM generates targeted search query with reasoning
+   - LLM chooses search type: "sec" for filings or "press_release" for news
+   - For SEC: RAG search finds relevant filing excerpts
+   - For Press Releases: Google search finds company announcements
+   - LLM analyzes findings and decides next steps
+   - Continues until sufficient information gathered (typically 4-6 searches)
+
+3. **Key Features**:
+   - **Dual search capability**: SEC filings AND press releases
+   - Press releases often have catalyst data before SEC filings
+   - Uses semantic RAG search for SEC documents
+   - Google search for press releases (with SerpAPI option)
+   - Loads text on-demand from compressed filings
+   - Company-specific filtering for targeted research
+   - Returns expanded context windows
+   - **Requires RAG to be available** (no fallback - fails fast if index not loaded)
+
+4. **Press Release Search**:
+   - Uses **googlesearch-python** library (FREE - no API key needed)
+   - No site restrictions - searches ALL sources including:
+     - Company investor relations pages (often the primary source)
+     - Traditional PR wire services (GlobeNewswire, PR Newswire, BusinessWire)
+     - Biotech news sites (BioSpace, FierceBiotech)
+     - Financial news sites (Yahoo Finance, Seeking Alpha)
+     - General news outlets
+   - Extracts titles, URLs, snippets, and dates
+   - Fails fast if library not installed - no fallbacks
+   - Broader coverage ensures finding the most recent and detailed information
+
+**Setup (FREE - No API Keys Required)**:
+```bash
+# Already included in requirements.txt:
+pip install googlesearch-python
+```
+
+That's it! No configuration needed.
+
+Example search progression:
+- Search 1: "OST-HER2 topline results" (press_release) → Find recent announcement
+- Search 2: "[Drug name] clinical trial design" (sec) → Get trial details from filings
+- Search 3: "primary endpoint efficacy data" (sec) → Get detailed results
+- Search 4: "adverse events safety discontinuation" (sec) → Assess safety profile
+- Search 5: "FDA feedback regulatory correspondence" (sec) → Check regulatory status
+- Search 6: "partnership licensing agreement" (press_release) → Recent deals
 
 ## Next Immediate Steps
 
@@ -502,15 +549,16 @@ The AI agent's `search_sec_filings` method now:
 
 ## Catalyst Analysis Reports
 
-The `analyze_catalyst.py` script automatically saves all reports in a structured folder format:
+The `analyze_catalyst.py` script automatically saves all outputs in a structured folder format:
 
 ```
 data/
   ai_reports/
     {ticker}_{company_id}/
       {catalyst_id}/
-        {YYYYMMDD_HHMMSS}_report.md      # The full markdown report
+        {YYYYMMDD_HHMMSS}_report.md           # The full markdown report (public)
         {YYYYMMDD_HHMMSS}_analysis_data.json  # Raw analysis data and stats
+        {YYYYMMDD_HHMMSS}_terminal_log.txt    # Complete terminal output
 ```
 
 Example:
@@ -519,15 +567,22 @@ data/
   ai_reports/
     OSTX_1234/
       3025/
-        20250627_143052_report.md
-        20250627_143052_analysis_data.json
+        20250627_143052_report.md         # Clean public report
+        20250627_143052_analysis_data.json # Structured data
+        20250627_143052_terminal_log.txt  # Full workflow log
 ```
 
 This structure allows you to:
+- Keep all related files together in one location
 - Track all analyses for a specific company
 - Compare multiple analyses of the same catalyst over time
-- Access both the formatted report and raw data
+- Access the clean public report, raw data, and complete workflow
 - Maintain a complete audit trail of all catalyst analyses
+
+File contents:
+- **report.md**: Clean, professional catalyst analysis (no technical details)
+- **analysis_data.json**: Structured data including search stats and findings
+- **terminal_log.txt**: Complete terminal output with all search details, reasoning, and statistics
 
 ## Usage Examples
 
@@ -606,6 +661,26 @@ python tests/test_rag_company_filtering.py
 # Run with verbose output
 python -m pytest tests/ -v
 ```
+
+### Press Release Search Testing
+
+Test the press release search functionality with various scenarios:
+
+```bash
+# Test multiple companies with different search scenarios
+python test_press_releases.py
+
+# Test specific company with custom search terms
+python test_press_releases.py ABBV pipeline update results
+python test_press_releases.py MRNA vaccine efficacy data
+python test_press_releases.py BIIB Alzheimer Leqembi approval
+```
+
+The test script shows:
+- Number of results found
+- Distribution of results by domain (company sites vs news sites vs PR wires)
+- Top 5 results with titles, URLs, dates, and snippets
+- Helps verify search coverage across different source types
 
 ---
 

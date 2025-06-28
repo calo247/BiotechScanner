@@ -96,18 +96,34 @@ class CatalystResearchAgent:
         # 3. Financial Health
         analysis_data["financial_health"] = self.tools.analyze_financial_health(company.id)
         
-        # 4. SEC Filing Analysis
-        search_terms = [drug.drug_name]
-        if indication:
-            search_terms.append(indication)
+        # 4. SEC Filing & Press Release Analysis - Dynamic LLM-driven search
+        print("\n" + "="*60)
+        print("🔬 STARTING AI-DRIVEN RESEARCH")
+        print("="*60)
+        drug_info_for_search = {
+            "name": drug.drug_name,
+            "company": company.name,
+            "ticker": company.ticker,
+            "stage": drug.stage,
+            "indication": indication or drug.indications_text,
+            "catalyst_date": drug.catalyst_date.isoformat() if drug.catalyst_date else None
+        }
         
-        sec_search_result = self.tools.search_sec_filings(
+        # Use dynamic LLM-driven search
+        sec_search_result = self.tools.dynamic_sec_research(
             company_id=company.id,
-            search_terms=search_terms,
-            filing_types=['10-K', '10-Q', '8-K']
+            drug_info=drug_info_for_search,
+            initial_context={
+                "historical_analysis": analysis_data["historical_analysis"],
+                "company_track_record": analysis_data["company_track_record"],
+                "financial_health": analysis_data["financial_health"]
+            },
+            llm_client=self.llm_client
         )
+        
         analysis_data["sec_insights"] = sec_search_result["results"]
         analysis_data["sec_search_stats"] = sec_search_result["stats"]
+        analysis_data["sec_search_history"] = sec_search_result["search_history"]
         
         # 5. Competitive Landscape
         if indication:
@@ -279,9 +295,7 @@ class CatalystResearchAgent:
         
         if summary_match:
             summary = summary_match.group(1).strip()
-            # Limit to first 500 characters
-            if len(summary) > 500:
-                summary = summary[:497] + "..."
+            # Return full summary without truncation
             return summary
         
         # Fallback: use first paragraph after title
