@@ -16,17 +16,22 @@ logger = logging.getLogger(__name__)
 class FAISSIndex:
     """Manage FAISS index for document embeddings."""
     
-    def __init__(self, embedding_dim: int = 384, index_path: str = "data/faiss"):
+    def __init__(self, embedding_dim: int = 384, index_path: str = "data/faiss", 
+                 use_pq: bool = True, pq_bits: int = 8):
         """
         Initialize FAISS index.
         
         Args:
             embedding_dim: Dimension of embeddings
             index_path: Directory to store index files
+            use_pq: Whether to use Product Quantization for compression
+            pq_bits: Bits per subquantizer (4 or 8, lower = more compression)
         """
         self.embedding_dim = embedding_dim
         self.index_path = Path(index_path)
         self.index_path.mkdir(parents=True, exist_ok=True)
+        self.use_pq = use_pq
+        self.pq_bits = pq_bits
         
         # File paths
         self.index_file = self.index_path / "sec_filings.index"
@@ -49,7 +54,7 @@ class FAISSIndex:
             self._create_index()
     
     def _create_index(self):
-        """Create new FAISS index."""
+        """Create new FAISS index with Product Quantization for memory efficiency."""
         # Using IVF index for better performance at scale
         # nlist = number of clusters (rule of thumb: sqrt(expected_vectors))
         nlist = 1000  # Good for up to 1M vectors
@@ -57,15 +62,28 @@ class FAISSIndex:
         # Create quantizer
         quantizer = faiss.IndexFlatL2(self.embedding_dim)
         
-        # Create IVF index with LSH for better memory efficiency
-        self.index = faiss.IndexIVFFlat(quantizer, self.embedding_dim, nlist)
-        
-        # Alternative: Use IndexIVFPQ for even better memory efficiency
-        # m = 64  # number of subquantizers
-        # bits = 8  # bits per subquantizer
-        # self.index = faiss.IndexIVFPQ(quantizer, self.embedding_dim, nlist, m, bits)
-        
-        logger.info(f"Created new FAISS index with dimension {self.embedding_dim}")
+        if self.use_pq:
+            # Use IndexIVFPQ for memory efficiency
+            # For 384-dim vectors (all-MiniLM-L6-v2), use m=48 (384/48=8 dimensions per subquantizer)
+            # For 768-dim vectors (S-PubMedBert), use m=96 (768/96=8 dimensions per subquantizer)
+            if self.embedding_dim == 384:
+                m = 48  # number of subquantizers
+            elif self.embedding_dim == 768:
+                m = 96
+            else:
+                m = min(self.embedding_dim // 8, 64)  # Ensure divisibility
+            
+            bits = self.pq_bits  # bits per subquantizer
+            
+            # Create PQ-compressed index
+            self.index = faiss.IndexIVFPQ(quantizer, self.embedding_dim, nlist, m, bits)
+            
+            logger.info(f"Created PQ-compressed FAISS index: dim={self.embedding_dim}, "
+                       f"nlist={nlist}, m={m}, bits={bits}")
+        else:
+            # Create standard IVF index without compression
+            self.index = faiss.IndexIVFFlat(quantizer, self.embedding_dim, nlist)
+            logger.info(f"Created standard FAISS index: dim={self.embedding_dim}, nlist={nlist}")
     
     def _load_index(self):
         """Load existing index from disk."""
@@ -90,6 +108,13 @@ class FAISSIndex:
     def save_index(self):
         """Save index and metadata to disk."""
         try:
+            # Check if we have pending embeddings that couldn't be added
+            if hasattr(self, '_pending_embeddings') and self._pending_embeddings:
+                total_pending = sum(len(e) for e in self._pending_embeddings)
+                logger.warning(f"Cannot save index - {total_pending} vectors pending training. "
+                             f"Need more data before index can be trained and saved.")
+                return
+            
             # Train index if needed (for IVF indices)
             if hasattr(self.index, 'is_trained') and not self.index.is_trained:
                 logger.warning("Index not trained, skipping save")
@@ -128,14 +153,79 @@ class FAISSIndex:
         if len(embeddings) != len(chunks):
             raise ValueError("Number of embeddings must match number of chunks")
         
-        # Train index if needed (first time for IVF indices)
+        # Check if we need to accumulate more data before training
         if hasattr(self.index, 'is_trained') and not self.index.is_trained:
-            logger.info("Training FAISS index...")
-            # For small datasets, duplicate embeddings to meet minimum training size
-            train_data = embeddings
-            if len(embeddings) < 1000:
-                train_data = np.tile(embeddings, (1000 // len(embeddings) + 1, 1))[:1000]
-            self.index.train(train_data.astype('float32'))
+            # Initialize pending storage if needed
+            if not hasattr(self, '_pending_embeddings'):
+                self._pending_embeddings = []
+                self._pending_chunks = []
+            
+            # Add to pending
+            self._pending_embeddings.append(embeddings)
+            self._pending_chunks.extend(chunks)
+            
+            # Calculate minimum training points needed
+            # For IVF: 40 * nlist, for PQ: 256 * number of subquantizers
+            if self.use_pq:
+                m = 48 if self.embedding_dim == 384 else 96
+                min_train_points = max(40 * 1000, 256 * m)  # ~40k minimum
+            else:
+                min_train_points = 40 * 1000  # 40k for IVF
+            
+            # Check if we have enough data
+            total_pending = sum(len(e) for e in self._pending_embeddings)
+            
+            if total_pending < min_train_points:
+                logger.info(f"Accumulating vectors for training: {total_pending}/{min_train_points}")
+                # Return empty list for now - we'll assign IDs when we actually add to index
+                return []
+            
+            # We have enough data - train and add all pending
+            logger.info(f"Training FAISS index with {total_pending} vectors...")
+            
+            # Combine all pending embeddings
+            all_embeddings = np.vstack(self._pending_embeddings)
+            all_chunks = self._pending_chunks
+            
+            # Train the index
+            self.index.train(all_embeddings.astype('float32'))
+            logger.info("Index training completed")
+            
+            # Clear pending
+            self._pending_embeddings = None
+            self._pending_chunks = None
+            
+            # Process all accumulated chunks
+            chunk_ids = []
+            current_idx = 0
+            
+            for chunk in all_chunks:
+                chunk_id = self.next_id
+                self.next_id += 1
+                
+                # Store metadata without text
+                self.metadata[chunk_id] = {
+                    'idx': current_idx,
+                    'file_path': chunk.get('file_path'),
+                    'section': chunk.get('section', 'UNKNOWN'),
+                    'filing_id': chunk.get('filing_id'),
+                    'company_id': chunk.get('company_id'),
+                    'filing_type': chunk.get('filing_type'),
+                    'filing_date': chunk.get('filing_date'),
+                    'char_start': chunk.get('char_start'),
+                    'char_end': chunk.get('char_end'),
+                    'indexed_at': datetime.utcnow().isoformat()
+                }
+                
+                self.id_to_idx[chunk_id] = current_idx
+                chunk_ids.append(chunk_id)
+                current_idx += 1
+            
+            # Add all embeddings to index
+            self.index.add(all_embeddings.astype('float32'))
+            logger.info(f"Added {len(all_embeddings)} embeddings to trained index")
+            
+            return chunk_ids
         
         # Assign IDs and store metadata
         chunk_ids = []

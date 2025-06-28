@@ -100,11 +100,14 @@ def get_companies_to_index(session, limit=None, min_filings=5):
     return query.all()
 
 
-def index_with_gpu(resume=False, company_limit=None, filing_types=None):
+def index_with_gpu(resume=False, company_limit=None, filing_types=None, 
+                   use_pq=True, pq_bits=8):
     """Main indexing function with GPU acceleration."""
     # Initialize components
     logger.info("Initializing RAG engine with GPU...")
-    engine = RAGSearchEngine(model_type='general-fast')
+    if use_pq:
+        logger.info(f"Using Product Quantization with {pq_bits} bits for compression")
+    engine = RAGSearchEngine(model_type='general-fast', use_pq=use_pq, pq_bits=pq_bits)
     session = get_db_session()
     progress = IndexingProgress()
     
@@ -209,6 +212,10 @@ def main():
                        help='Filing types to index')
     parser.add_argument('--test', action='store_true',
                        help='Test mode - index only 5 companies')
+    parser.add_argument('--no-pq', action='store_true',
+                       help='Disable Product Quantization compression')
+    parser.add_argument('--pq-bits', type=int, default=8, choices=[4, 8],
+                       help='PQ bits (4 for extreme compression, 8 for better quality)')
     
     args = parser.parse_args()
     
@@ -223,7 +230,9 @@ def main():
     index_with_gpu(
         resume=args.resume,
         company_limit=args.company_limit,
-        filing_types=args.filing_types
+        filing_types=args.filing_types,
+        use_pq=not args.no_pq,
+        pq_bits=args.pq_bits
     )
 
 

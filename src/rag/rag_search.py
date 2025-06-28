@@ -22,7 +22,9 @@ class RAGSearchEngine:
     
     def __init__(self, model_type: str = 'general-fast', 
                  use_hybrid: bool = False,
-                 index_path: str = "data/faiss"):
+                 index_path: str = "data/faiss",
+                 use_pq: bool = True,
+                 pq_bits: int = 8):
         """
         Initialize RAG search engine.
         
@@ -30,6 +32,8 @@ class RAGSearchEngine:
             model_type: Type of embedding model to use
             use_hybrid: Use hybrid embedder for mixed content
             index_path: Path to store FAISS index
+            use_pq: Whether to use Product Quantization for compression
+            pq_bits: Bits per subquantizer (4 or 8, lower = more compression)
         """
         # Initialize components
         if use_hybrid:
@@ -39,7 +43,7 @@ class RAGSearchEngine:
             self.embedder = EmbeddingModel(model_type)
             self.embedding_dim = self.embedder.embedding_dim
         
-        self.index = FAISSIndex(self.embedding_dim, index_path)
+        self.index = FAISSIndex(self.embedding_dim, index_path, use_pq=use_pq, pq_bits=pq_bits)
         self.processor = SECDocumentProcessor()
         
         # Database session
@@ -358,6 +362,43 @@ class RAGSearchEngine:
             stats['embedding_model'] = self.embedder.get_model_info()
         
         return stats
+    
+    def search_by_ticker(self, query: str, ticker: str, k: int = 10,
+                        filing_types: Optional[List[str]] = None,
+                        rerank: bool = False) -> List[Dict]:
+        """
+        Search within a specific company's filings using ticker symbol.
+        
+        Args:
+            query: Search query text
+            ticker: Company ticker symbol (e.g., 'MRNA')
+            k: Number of results to return
+            filing_types: Optional list of filing types to filter
+            rerank: Whether to rerank results
+            
+        Returns:
+            List of search results
+            
+        Example:
+            results = engine.search_by_ticker("clinical trial", "MRNA", k=5)
+        """
+        # Look up company by ticker
+        company = self.db_session.query(Company).filter_by(
+            ticker=ticker.upper()
+        ).first()
+        
+        if not company:
+            logger.warning(f"Company '{ticker}' not found in database")
+            return []
+        
+        # Use existing search method with company_id filter
+        return self.search(
+            query=query,
+            company_id=company.id,
+            k=k,
+            filing_types=filing_types,
+            rerank=rerank
+        )
     
     def close(self):
         """Clean up resources."""
