@@ -185,10 +185,10 @@ class CatalystAnalysisTools:
     
     def search_sec_filings(self, company_id: int, search_terms: List[str], 
                           filing_types: Optional[List[str]] = None,
-                          days_back: int = 365) -> List[Dict[str, Any]]:
+                          days_back: int = 365) -> Dict[str, Any]:
         """
         Search SEC filings for specific terms related to the catalyst.
-        Uses RAG pipeline if available, falls back to parsed_content.
+        Requires RAG pipeline to be available.
         
         Args:
             company_id: Company to search
@@ -197,95 +197,88 @@ class CatalystAnalysisTools:
             days_back: How many days back to search
             
         Returns:
-            List of relevant filing excerpts with context
+            Dictionary containing:
+            - results: List of relevant filing excerpts with context
+            - stats: Search statistics (chunks searched, unique filings, etc.)
         """
-        # Try to use RAG search if available
-        try:
-            from ..rag.rag_search import RAGSearchEngine
-            
-            # Initialize RAG engine (cached in production)
-            rag_engine = RAGSearchEngine(model_type='general-fast')
-            
-            # Combine search terms into query
-            query = ' '.join(search_terms)
-            
-            # Search with RAG
-            rag_results = rag_engine.search(
-                query=query,
-                company_id=company_id,
-                filing_types=filing_types,
-                k=10
-            )
-            
-            # Format results
-            results = []
-            for result in rag_results:
-                # Get expanded context
-                context = rag_engine.get_context_window(result, window_size=500)
-                
-                results.append({
-                    "filing_type": result['filing_type'],
-                    "filing_date": result['filing_date'],
-                    "accession_number": result.get('accession_number', ''),
-                    "section": result.get('section', 'Unknown'),
-                    "excerpt": context,
-                    "relevance_score": result.get('score', 0),
-                    "matched_query": query
-                })
-            
-            rag_engine.close()
-            return results
-            
-        except ImportError:
-            # Fallback to old method if RAG not available
-            pass
-        except Exception as e:
-            print(f"RAG search failed, falling back to basic search: {e}")
+        # Always use RAG search - fail fast if not available
+        from ..rag.rag_search import RAGSearchEngine
         
-        # Original implementation as fallback
-        cutoff_date = datetime.utcnow() - timedelta(days=days_back)
+        # Initialize RAG engine (cached in production)
+        rag_engine = RAGSearchEngine(model_type='general-fast')
         
-        query = self.session.query(SECFiling).filter(
-            and_(
-                SECFiling.company_id == company_id,
-                SECFiling.filing_date >= cutoff_date
-            )
+        # Combine search terms into query
+        query = ' '.join(search_terms)
+        
+        # Get index stats before search
+        index_stats = rag_engine.get_stats()
+        total_chunks = index_stats.get('total_chunks', 0)
+        
+        # Search with RAG
+        rag_results = rag_engine.search(
+            query=query,
+            company_id=company_id,
+            filing_types=filing_types,
+            k=10
         )
         
-        if filing_types:
-            query = query.filter(SECFiling.filing_type.in_(filing_types))
+        # Collect statistics
+        unique_filings = set()
+        unique_filing_types = set()
+        score_range = [float('inf'), float('-inf')] if rag_results else [0, 0]
         
-        filings = query.order_by(SECFiling.filing_date.desc()).all()
-        
+        # Format results
         results = []
-        for filing in filings:
-            if filing.parsed_content:
-                # Search in parsed content
-                matches = []
-                for section, content in filing.parsed_content.items():
-                    if isinstance(content, str):
-                        content_lower = content.lower()
-                        for term in search_terms:
-                            if term.lower() in content_lower:
-                                # Extract context around match
-                                idx = content_lower.find(term.lower())
-                                start = max(0, idx - 200)
-                                end = min(len(content), idx + 200)
-                                matches.append({
-                                    "section": section,
-                                    "excerpt": "..." + content[start:end] + "...",
-                                    "term": term
-                                })
-                
-                if matches:
-                    results.append({
-                        "filing_type": filing.filing_type,
-                        "filing_date": filing.filing_date.isoformat(),
-                        "accession_number": filing.accession_number,
-                        "matches": matches[:3]  # Limit to 3 matches per filing
-                    })
+        for result in rag_results:
+            # Track unique filings
+            filing_id = result.get('filing_id')
+            filing_type = result.get('filing_type')
+            if filing_id:
+                unique_filings.add(filing_id)
+            if filing_type:
+                unique_filing_types.add(filing_type)
+            
+            # Track score range
+            score = result.get('score', 0)
+            score_range[0] = min(score_range[0], score)
+            score_range[1] = max(score_range[1], score)
+            
+            # Get expanded context
+            context = rag_engine.get_context_window(result, window_size=500)
+            
+            results.append({
+                "filing_type": filing_type,
+                "filing_date": result['filing_date'],
+                "accession_number": result.get('accession_number', ''),
+                "section": result.get('section', 'Unknown'),
+                "excerpt": context,
+                "relevance_score": score,
+                "matched_query": query
+            })
         
-        return results[:10]  # Return top 10 most relevant filings
+        # Compile statistics
+        stats = {
+            "rag_search_used": True,
+            "total_index_chunks": total_chunks,
+            "query": query,
+            "company_id": company_id,
+            "results_found": len(results),
+            "unique_filings_matched": len(unique_filings),
+            "filing_types_searched": list(filing_types) if filing_types else ["all"],
+            "filing_types_found": list(unique_filing_types),
+            "relevance_score_range": {
+                "best": score_range[0] if results else None,
+                "worst": score_range[1] if results else None
+            },
+            "search_method": "FAISS with Product Quantization"
+        }
+        
+        rag_engine.close()
+        
+        return {
+            "results": results,
+            "stats": stats
+        }
     
     def get_competitive_landscape(self, indication: str, stage: str) -> List[Dict[str, Any]]:
         """

@@ -481,7 +481,7 @@ The AI agent's `search_sec_filings` method now:
 2. Loads text on-demand from compressed filings
 3. Supports company-specific filtering for targeted research
 4. Returns expanded context windows
-5. Falls back to basic search if RAG unavailable
+5. **Requires RAG to be available** (no fallback - fails fast if index not loaded)
 
 ## Next Immediate Steps
 
@@ -499,6 +499,35 @@ The AI agent's `search_sec_filings` method now:
    - Build on existing AI agent architecture
    - Add conversation memory and context
    - Enable follow-up questions about catalysts
+
+## Catalyst Analysis Reports
+
+The `analyze_catalyst.py` script automatically saves all reports in a structured folder format:
+
+```
+data/
+  ai_reports/
+    {ticker}_{company_id}/
+      {catalyst_id}/
+        {YYYYMMDD_HHMMSS}_report.md      # The full markdown report
+        {YYYYMMDD_HHMMSS}_analysis_data.json  # Raw analysis data and stats
+```
+
+Example:
+```
+data/
+  ai_reports/
+    OSTX_1234/
+      3025/
+        20250627_143052_report.md
+        20250627_143052_analysis_data.json
+```
+
+This structure allows you to:
+- Track all analyses for a specific company
+- Compare multiple analyses of the same catalyst over time
+- Access both the formatted report and raw data
+- Maintain a complete audit trail of all catalyst analyses
 
 ## Usage Examples
 

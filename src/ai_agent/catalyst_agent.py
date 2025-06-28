@@ -101,11 +101,13 @@ class CatalystResearchAgent:
         if indication:
             search_terms.append(indication)
         
-        analysis_data["sec_insights"] = self.tools.search_sec_filings(
+        sec_search_result = self.tools.search_sec_filings(
             company_id=company.id,
             search_terms=search_terms,
             filing_types=['10-K', '10-Q', '8-K']
         )
+        analysis_data["sec_insights"] = sec_search_result["results"]
+        analysis_data["sec_search_stats"] = sec_search_result["stats"]
         
         # 5. Competitive Landscape
         if indication:
