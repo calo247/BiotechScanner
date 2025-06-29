@@ -225,6 +225,10 @@ class HistoricalCatalyst(Base):
     catalyst_text = Column(Text)  # Outcome description
     catalyst_source = Column(Text)
     
+    # Announcement timing information
+    announcement_time = Column(String(50))  # e.g., "7:30 AM ET"
+    announcement_timing = Column(String(20))  # PRE-MARKET, AFTER-HOURS, MARKET-HOURS
+    
     # Tracking
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     

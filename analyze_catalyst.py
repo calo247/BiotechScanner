@@ -93,12 +93,15 @@ def analyze_by_id(drug_id: int):
             print(f"Error: {result['error']}")
             return
         
-        # Print RAG search statistics (for terminal/log only, not in the report)
+        # Print comprehensive analysis statistics
+        print("\n" + "="*60)
+        print("📈 FINAL ANALYSIS STATISTICS")
+        print("="*60)
+        
+        # Print search statistics if available
         if "sec_search_stats" in result["analysis_data"]:
             stats = result["analysis_data"]["sec_search_stats"]
-            print("\n" + "="*60)
-            print("📈 RESEARCH STATISTICS (INTERNAL - NOT IN REPORT)")
-            print("="*60)
+            print("\n🔍 SEARCH STATISTICS:")
             
             # Check if it was LLM-driven
             if stats.get('llm_driven', False):
@@ -117,12 +120,6 @@ def analyze_by_id(drug_id: int):
                         print(f"     Query: '{search['query']}'")
                         print(f"     Reasoning: {search['reasoning']}")
                         print(f"     Results Found: {search['results_found']}")
-                        if search.get('key_findings'):
-                            print(f"     AI Findings Summary:")
-                            # Indent the findings for better readability
-                            for line in search['key_findings'].split('\n'):
-                                if line.strip():
-                                    print(f"       {line.strip()}")
             else:
                 # Fallback to old format
                 print(f"✓ RAG Search Used: {stats.get('rag_search_used', True)}")
@@ -131,10 +128,21 @@ def analyze_by_id(drug_id: int):
                 print(f"✓ Results Found: {stats.get('results_found', 0)}")
                 print(f"✓ Unique SEC Filings Matched: {stats.get('unique_filings_matched', 0)}")
             
-            print("="*60)
-            print("\n📊 CATALYST ANALYSIS REPORT")
-            print("="*60)
-            print()
+        
+        # Print analysis metadata
+        print("\n📊 ANALYSIS METADATA:")
+        analysis = result["analysis_data"]
+        print(f"  Drug: {analysis['drug_info']['name']}")
+        print(f"  Company: {analysis['drug_info']['company']} ({analysis['drug_info']['ticker']})")
+        print(f"  Stage: {analysis['drug_info']['stage']}")
+        print(f"  Catalyst Date: {analysis['drug_info']['catalyst_date']}")
+        print(f"  Report ID: {result['report_id']}")
+        print(f"  Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        print("\n" + "="*60)
+        print("📊 CATALYST ANALYSIS REPORT")
+        print("="*60)
+        print()
         
         # Print the report
         print(result["report"])

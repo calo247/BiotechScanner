@@ -34,104 +34,181 @@ class CatalystAnalysisTools:
         )
         
         if indication and isinstance(indication, str):
-            query = query.filter(
-                HistoricalCatalyst.drug_indication.ilike(f'%{indication}%')
-            )
+            # For better matching, search for key terms from the indication
+            # Split indication into key terms and search for the most specific ones
+            key_terms = []
+            
+            # Extract disease-specific terms (avoid generic words)
+            stop_words = {'lung', 'metastatic', 'recurrent', 'advanced', 'pediatric', 'adult'}
+            indication_words = indication.lower().split()
+            
+            # Look for specific disease terms
+            for word in indication_words:
+                if word not in stop_words and len(word) > 3:
+                    key_terms.append(word)
+            
+            # If we have specific disease terms, use them
+            if key_terms:
+                # For diseases like "osteosarcoma", search for that specific term
+                most_specific_term = max(key_terms, key=len)
+                query = query.filter(
+                    HistoricalCatalyst.drug_indication.ilike(f'%{most_specific_term}%')
+                )
+            else:
+                # Fallback to full indication
+                query = query.filter(
+                    HistoricalCatalyst.drug_indication.ilike(f'%{indication}%')
+                )
         
         catalysts = query.all()
         
         if not catalysts:
             return {
-                "success_rate": 0,
                 "total_events": 0,
-                "positive_outcomes": 0,
-                "average_price_change": 0
+                "note": f"No historical catalysts found for {stage} stage" + (f" in {indication}" if indication else ""),
+                "catalyst_details": []
             }
         
-        # Analyze outcomes based on catalyst_text
-        positive_keywords = ['approved', 'positive', 'success', 'met primary', 'significant']
-        negative_keywords = ['failed', 'negative', 'missed', 'discontinued', 'terminated']
-        
-        positive_count = 0
-        price_changes = []
-        
-        for catalyst in catalysts:
-            text_lower = catalyst.catalyst_text.lower() if catalyst.catalyst_text else ""
+        # Include ALL catalyst events for LLM to analyze
+        catalyst_details = []
+        for catalyst in catalysts:  # Include all catalysts, not limited
+            # Check if we have stored timing info
+            stored_timing = None
+            if hasattr(catalyst, 'announcement_timing') and catalyst.announcement_timing:
+                stored_timing = {
+                    'announcement_time': catalyst.announcement_time,
+                    'announcement_timing': catalyst.announcement_timing
+                }
             
-            if any(keyword in text_lower for keyword in positive_keywords):
-                positive_count += 1
-            
-            # Get price change around catalyst date
-            price_change = self._calculate_price_change(
+            price_change, timing_note = self._calculate_price_change(
                 catalyst.company_id, 
-                catalyst.catalyst_date
+                catalyst.catalyst_date,
+                stored_timing=stored_timing
             )
-            if price_change is not None:
-                price_changes.append(price_change)
+            
+            catalyst_details.append({
+                "date": catalyst.catalyst_date.isoformat() if catalyst.catalyst_date else None,
+                "company": catalyst.ticker,
+                "drug": catalyst.drug_name,
+                "indication": catalyst.drug_indication,
+                "stage": catalyst.stage,
+                "outcome": catalyst.catalyst_text,
+                "source_url": catalyst.catalyst_source,
+                "price_change": price_change,
+                "price_change_note": timing_note
+            })
         
         return {
-            "success_rate": (positive_count / len(catalysts)) * 100,
             "total_events": len(catalysts),
-            "positive_outcomes": positive_count,
-            "average_price_change": sum(price_changes) / len(price_changes) if price_changes else 0
+            "note": f"Found {len(catalysts)} historical events for LLM analysis",
+            "catalyst_details": catalyst_details
         }
     
-    def get_company_track_record(self, company_id: int) -> Dict[str, Any]:
+    def get_company_track_record(self, company_id: int, indication: Optional[str] = None, 
+                                drug_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get a company's historical track record with FDA approvals and clinical trials.
+        Get a company's historical track record, optionally filtered by indication or drug.
+        
+        Args:
+            company_id: Company ID
+            indication: If provided, only look at catalysts for this indication
+            drug_name: If provided, only look at catalysts for this specific drug
         
         Returns:
-            - total_drugs: number of drugs in pipeline
-            - approved_drugs: number of approved drugs
-            - failed_drugs: number of failed drugs
-            - success_rate: overall success rate
+            - total_events: number of relevant historical events
+            - positive_outcomes: number of successful outcomes
+            - negative_outcomes: number of failed outcomes
+            - success_rate: success rate for this specific context
             - recent_catalysts: list of recent catalyst outcomes
         """
-        # Get all drugs for the company
-        drugs = self.session.query(Drug).filter(Drug.company_id == company_id).all()
-        
-        # Get historical catalysts
-        historical = self.session.query(HistoricalCatalyst).filter(
+        # Build query for historical catalysts
+        query = self.session.query(HistoricalCatalyst).filter(
             HistoricalCatalyst.company_id == company_id
-        ).order_by(HistoricalCatalyst.catalyst_date.desc()).limit(10).all()
+        )
         
-        approved_count = sum(1 for drug in drugs if 'approved' in drug.stage.lower())
+        # Filter by drug name if provided
+        if drug_name:
+            query = query.filter(
+                HistoricalCatalyst.drug_name.ilike(f'%{drug_name}%')
+            )
         
-        # Analyze historical outcomes
-        failed_count = 0
-        for h in historical:
-            if h.catalyst_text and any(word in h.catalyst_text.lower() 
-                                     for word in ['failed', 'discontinued', 'terminated']):
-                failed_count += 1
+        # Filter by indication if provided (using the same logic as historical success rate)
+        if indication and isinstance(indication, str):
+            # Extract key disease terms
+            key_terms = []
+            stop_words = {'lung', 'metastatic', 'recurrent', 'advanced', 'pediatric', 'adult'}
+            indication_words = indication.lower().split()
+            
+            for word in indication_words:
+                if word not in stop_words and len(word) > 3:
+                    key_terms.append(word)
+            
+            if key_terms:
+                most_specific_term = max(key_terms, key=len)
+                query = query.filter(
+                    HistoricalCatalyst.drug_indication.ilike(f'%{most_specific_term}%')
+                )
         
-        recent_catalysts = [
-            {
+        # Get results ordered by date
+        historical = query.order_by(HistoricalCatalyst.catalyst_date.desc()).all()
+        
+        if not historical:
+            context_desc = []
+            if drug_name:
+                context_desc.append(f"drug {drug_name}")
+            if indication:
+                context_desc.append(f"indication {indication}")
+            context_str = " and ".join(context_desc) if context_desc else "this context"
+            
+            return {
+                "total_events": 0,
+                "recent_catalysts": [],
+                "note": f"No historical catalysts found for {context_str}"
+            }
+        
+        # Format all relevant catalysts for LLM analysis
+        recent_catalysts = []
+        for h in historical:  # All catalysts
+            # Check if we have stored timing info
+            stored_timing = None
+            if hasattr(h, 'announcement_timing') and h.announcement_timing:
+                stored_timing = {
+                    'announcement_time': h.announcement_time,
+                    'announcement_timing': h.announcement_timing
+                }
+            
+            price_change, timing_note = self._calculate_price_change(
+                company_id,
+                h.catalyst_date,
+                stored_timing=stored_timing
+            )
+            
+            recent_catalysts.append({
                 "date": h.catalyst_date.isoformat() if h.catalyst_date else None,
                 "drug": h.drug_name,
+                "indication": h.drug_indication,
                 "stage": h.stage,
-                "outcome": h.catalyst_text[:200] if h.catalyst_text else None
-            }
-            for h in historical[:5]
-        ]
+                "outcome": h.catalyst_text,  # Full text for LLM analysis
+                "source_url": h.catalyst_source,
+                "price_change": price_change,
+                "price_change_note": timing_note
+            })
         
         return {
-            "total_drugs": len(drugs),
-            "approved_drugs": approved_count,
-            "failed_drugs": failed_count,
-            "success_rate": (approved_count / len(drugs)) * 100 if drugs else 0,
-            "recent_catalysts": recent_catalysts
+            "total_events": len(historical),
+            "recent_catalysts": recent_catalysts,
+            "note": f"Found {len(historical)} company events for LLM analysis"
         }
     
     def analyze_financial_health(self, company_id: int) -> Dict[str, Any]:
         """
-        Analyze company's financial health and runway.
+        Get basic financial metrics. Cash runway guidance will be searched in SEC filings.
         
         Returns:
             - cash_on_hand: latest cash position
-            - quarterly_burn_rate: average cash burn per quarter
-            - runway_months: estimated months of runway
             - revenue: latest annual revenue
             - market_cap: current market capitalization
+            - cash_runway_guidance: placeholder for SEC search
         """
         # Get latest financial metrics
         cash_metrics = self.session.query(FinancialMetric).filter(
@@ -141,15 +218,6 @@ class CatalystAnalysisTools:
                                             'Cash', 'CashCashEquivalentsAndShortTermInvestments'])
             )
         ).order_by(FinancialMetric.filed_date.desc()).limit(5).all()
-        
-        # Get operating cash flow or net loss for burn rate
-        burn_metrics = self.session.query(FinancialMetric).filter(
-            and_(
-                FinancialMetric.company_id == company_id,
-                FinancialMetric.concept.in_(['NetCashProvidedByUsedInOperatingActivities',
-                                            'NetLoss', 'NetIncomeLoss'])
-            )
-        ).order_by(FinancialMetric.filed_date.desc()).limit(4).all()
         
         # Get revenue
         revenue_metrics = self.session.query(FinancialMetric).filter(
@@ -166,24 +234,11 @@ class CatalystAnalysisTools:
         
         cash_on_hand = cash_metrics[0].value if cash_metrics else 0
         
-        # Calculate quarterly burn rate
-        quarterly_burn = 0
-        if burn_metrics:
-            quarterly_burns = []
-            for metric in burn_metrics:
-                if metric.fiscal_period in ['Q1', 'Q2', 'Q3', 'Q4']:
-                    quarterly_burns.append(abs(metric.value))
-            if quarterly_burns:
-                quarterly_burn = sum(quarterly_burns) / len(quarterly_burns)
-        
-        runway_months = (cash_on_hand / (quarterly_burn / 3)) if quarterly_burn > 0 else 999
-        
         return {
             "cash_on_hand": cash_on_hand,
-            "quarterly_burn_rate": quarterly_burn,
-            "runway_months": min(runway_months, 999),
             "revenue": revenue_metrics.value if revenue_metrics else 0,
-            "market_cap": latest_stock.market_cap if latest_stock else 0
+            "market_cap": latest_stock.market_cap if latest_stock else 0,
+            "cash_runway_guidance": "To be searched in SEC filings"
         }
     
     def search_sec_filings(self, company_id: int, search_terms: List[str], 
@@ -225,6 +280,36 @@ class CatalystAnalysisTools:
         print(f"The AI can search both SEC filings (via FAISS) and press releases (via Google)")
         print(f"{'='*60}")
         
+        # Print initial context
+        print("\n📋 COMPLETE INITIAL CONTEXT PROVIDED TO LLM:")
+        print("="*60)
+        print("DRUG INFORMATION:")
+        print(f"  Drug: {drug_info['name']}")
+        print(f"  Company: {drug_info['company']} ({drug_info['ticker']})")
+        print(f"  Stage: {drug_info['stage']}")
+        print(f"  Indication: {drug_info['indication']}")
+        print(f"  Catalyst Date: {drug_info['catalyst_date']}")
+        
+        print("\nHISTORICAL ANALYSIS:")
+        hist = context['historical_analysis']
+        print(f"  Total Events: {hist.get('total_events', 0)}")
+        print(f"  Note: {hist.get('note', '')}")
+        print(f"  All {hist.get('total_events', 0)} events provided to LLM for analysis")
+        
+        print("\nCOMPANY TRACK RECORD:")
+        track = context['company_track_record']
+        print(f"  Total Events: {track.get('total_events', 0)}")
+        print(f"  Note: {track.get('note', '')}")
+        print(f"  All {track.get('total_events', 0)} events provided to LLM for analysis")
+        
+        print("\nFINANCIAL HEALTH:")
+        fin = context['financial_health']
+        print(f"  Cash on Hand: ${fin.get('cash_on_hand', 0):,.0f}")
+        print(f"  Annual Revenue: ${fin.get('revenue', 0):,.0f}")
+        print(f"  Market Cap: ${fin.get('market_cap', 0):,.0f}")
+        print(f"  Cash Runway: Will search for company guidance in SEC filings")
+        print("="*60)
+        
         for iteration in range(max_searches):
             print(f"\n--- Search Iteration {iteration + 1} ---")
             
@@ -233,7 +318,12 @@ class CatalystAnalysisTools:
             
             # Check if LLM thinks we're done
             if search_decision.get("done", False):
-                print(f"LLM indicates research complete: {search_decision.get('summary', 'Sufficient information gathered')}")
+                print("\n" + "="*60)
+                print("✅ LLM INDICATES RESEARCH COMPLETE")
+                print("="*60)
+                print(f"Summary: {search_decision.get('summary', 'Sufficient information gathered')}")
+                print(f"Total iterations completed: {iteration + 1}")
+                print("="*60)
                 break
             
             # Perform the search
@@ -318,15 +408,33 @@ class CatalystAnalysisTools:
             
             print(f"\n✅ Found: {len(search_result['results'])} results")
             if search_result['results']:
-                print("📄 Sample results:")
-                for i, res in enumerate(search_result['results'][:3]):
+                print("\n📄 FULL SEARCH RESULTS:")
+                print("-" * 60)
+                for i, res in enumerate(search_result['results']):
                     if search_type == "press_release":
-                        print(f"   {i+1}. {res.get('filing_date', 'Unknown date')} - {res.get('excerpt', '').split('\\n')[0][:100]}...")
+                        print(f"\nResult {i+1}: PRESS RELEASE")
+                        print(f"   Date: {res.get('filing_date', 'Unknown date')}")
+                        print(f"   Source: {res.get('section', 'Unknown')}")
+                        print(f"   URL: {res.get('url', 'No URL')}")
+                        print(f"   Full Title/Excerpt:")
+                        print(f"   {res.get('excerpt', 'No content')}")
+                        print("-" * 40)
                     else:
-                        print(f"   {i+1}. {res.get('filing_type')} ({res.get('filing_date')}) - {res.get('section', 'Unknown section')}")
+                        print(f"\nResult {i+1}: SEC FILING")
+                        print(f"   Type: {res.get('filing_type')}")
+                        print(f"   Date: {res.get('filing_date')}")
+                        print(f"   Accession: {res.get('accession_number', 'Unknown')}")
+                        print(f"   Section: {res.get('section', 'Unknown section')}")
+                        print(f"   Relevance Score: {res.get('relevance_score', 0):.4f}")
+                        print(f"   Full Excerpt ({len(res.get('excerpt', ''))} chars):")
+                        print(f"   {res.get('excerpt', 'No content')}")
+                        print("-" * 40)
+                print("-" * 60)
             
-            print(f"\n🔍 AI Analysis of findings:")
-            print(f"{key_findings}")
+            print(f"\n🔍 AI ANALYSIS OF FINDINGS:")
+            print("="*40)
+            print(key_findings)
+            print("="*40)
         
         # Compile final results
         all_stats["unique_filings_count"] = len(all_stats["unique_filings"])
@@ -336,11 +444,30 @@ class CatalystAnalysisTools:
         all_stats["search_method"] = "LLM-driven dynamic FAISS search"
         
         print(f"\n{'='*60}")
-        print(f"📊 Research Summary:")
-        print(f"   Total searches performed: {all_stats['total_searches']}")
-        print(f"   Total results found: {all_stats['total_results']}")
-        print(f"   Unique SEC filings accessed: {all_stats['unique_filings_count']}")
-        print(f"   Press releases found: {all_stats.get('press_releases_found', 0)}")
+        print(f"📊 COMPREHENSIVE RESEARCH SUMMARY:")
+        print(f"{'='*60}")
+        print(f"Total searches performed: {all_stats['total_searches']}")
+        print(f"Total results found: {all_stats['total_results']}")
+        print(f"Unique SEC filings accessed: {all_stats['unique_filings_count']}")
+        print(f"Press releases found: {all_stats.get('press_releases_found', 0)}")
+        
+        print(f"\n🔍 SEARCH BREAKDOWN BY TYPE:")
+        sec_searches = sum(1 for s in search_history if s.get('search_type', 'sec') == 'sec')
+        pr_searches = sum(1 for s in search_history if s.get('search_type') == 'press_release')
+        print(f"  SEC Filing searches: {sec_searches}")
+        print(f"  Press Release searches: {pr_searches}")
+        
+        print(f"\n📑 ALL SEARCH QUERIES PERFORMED:")
+        for i, search in enumerate(search_history):
+            search_type = "Press Release" if search.get('search_type') == 'press_release' else "SEC"
+            print(f"  {i+1}. [{search_type}] '{search['query']}' - {search['results_found']} results")
+        
+        print(f"\n🎯 KEY FINDINGS SUMMARY:")
+        for i, search in enumerate(search_history):
+            if search.get('key_findings') and search['key_findings'] != "No results found for this query":
+                print(f"\nFrom Search {i+1}:")
+                print(f"{search['key_findings']}")
+        
         print(f"{'='*60}")
         
         return {
@@ -472,36 +599,86 @@ class CatalystAnalysisTools:
         return competitors[:10]
     
     def _calculate_price_change(self, company_id: int, catalyst_date: datetime, 
-                               days_before: int = 5, days_after: int = 5) -> Optional[float]:
-        """Calculate price change around a catalyst event."""
+                               days_before: int = 5, days_after: int = 5,
+                               stored_timing: Optional[Dict[str, Any]] = None) -> tuple[Optional[float], Optional[str]]:
+        """
+        Calculate price change around a catalyst event using stored timing information.
+        Returns tuple of (price_change, timing_note)
+        """
         if not catalyst_date:
-            return None
-            
-        before_date = catalyst_date - timedelta(days=days_before)
-        after_date = catalyst_date + timedelta(days=days_after)
+            return None, None
         
-        # Get price before
-        price_before = self.session.query(func.avg(StockData.close)).filter(
+        # Default to catalyst date
+        announcement_date = catalyst_date
+        timing_note = None
+        adjust_to_next_day = False
+        
+        # Use stored timing info if available
+        if stored_timing:
+            timing_type = stored_timing.get('announcement_timing', '')
+            announcement_time = stored_timing.get('announcement_time', '')
+            
+            if timing_type == 'AFTER-HOURS':
+                adjust_to_next_day = True
+                timing_note = f"After-hours announcement ({announcement_time})"
+            elif timing_type == 'PRE-MARKET':
+                timing_note = f"Pre-market announcement ({announcement_time})"
+            elif timing_type == 'MARKET-HOURS':
+                timing_note = f"Market hours announcement ({announcement_time})"
+        
+        # Adjust dates based on timing
+        if adjust_to_next_day:
+            # For after-hours announcements only, price impact starts next trading day
+            # Find next trading day
+            test_date = announcement_date + timedelta(days=1)
+            while test_date.weekday() >= 5:  # Skip weekends
+                test_date += timedelta(days=1)
+            
+            # Check if next day has trading data
+            has_data = self.session.query(StockData).filter(
+                and_(
+                    StockData.company_id == company_id,
+                    StockData.date == test_date
+                )
+            ).first()
+            
+            if has_data:
+                announcement_date = test_date
+            
+        before_date = announcement_date - timedelta(days=days_before)
+        after_date = announcement_date + timedelta(days=days_after)
+        
+        # Get price on the day before announcement (not average)
+        price_before_query = self.session.query(StockData.close).filter(
             and_(
                 StockData.company_id == company_id,
-                StockData.date >= before_date,
-                StockData.date < catalyst_date
+                StockData.date < announcement_date
             )
-        ).scalar()
+        ).order_by(StockData.date.desc()).first()
         
-        # Get price after
+        price_before = price_before_query[0] if price_before_query else None
+        
+        # Get price on announcement day and following days
         price_after = self.session.query(func.avg(StockData.close)).filter(
             and_(
                 StockData.company_id == company_id,
-                StockData.date > catalyst_date,
+                StockData.date >= announcement_date,
                 StockData.date <= after_date
             )
         ).scalar()
         
         if price_before and price_after and price_before > 0:
-            return ((price_after - price_before) / price_before) * 100
+            price_change = ((price_after - price_before) / price_before) * 100
+            return price_change, timing_note
         
-        return None
+        # Debug: print why we're returning None
+        if not price_before:
+            print(f"   DEBUG: No price data found before {announcement_date}")
+        if not price_after:
+            print(f"   DEBUG: No price data found after {announcement_date} (looking up to {after_date})")
+        
+        return None, None
+    
     
     def search_company_press_releases(self, company_name: str, ticker: str, 
                                      search_terms: List[str], days_back: int = 30) -> List[Dict[str, Any]]:

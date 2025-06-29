@@ -6,6 +6,11 @@ from typing import Dict, Any, Optional
 from dateutil import parser as date_parser
 from tqdm import tqdm
 import signal
+import time
+import requests
+from bs4 import BeautifulSoup
+import re
+from urllib.parse import urlparse
 
 from .api_clients.biopharma_client import biopharma_client
 from .api_clients.polygon_client import polygon_client
@@ -27,6 +32,8 @@ class DataSynchronizer:
         self.polygon_client = polygon_client
         self.sec_client = sec_client
         self.interrupted = False
+        # Track last request time per domain for rate limiting
+        self._last_request_time = {}
         
         # Set up signal handler for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -35,6 +42,66 @@ class DataSynchronizer:
         """Handle Ctrl+C gracefully."""
         logger.info("\n\nReceived interrupt signal. Finishing current drug and stopping...")
         self.interrupted = True
+    
+    def _extract_announcement_timing(self, ticker: str, catalyst_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract announcement timing using LLM from the source URL.
+        
+        Args:
+            ticker: Stock ticker
+            catalyst_data: Full catalyst data including date, drug_name, and source URL
+            
+        Returns:
+            Dict with timing information or empty dict if unable to extract
+        """
+        source_url = catalyst_data.get('catalyst_source', '')
+        if not source_url:
+            return {}
+        
+        try:
+            # Extract domain for rate limiting
+            domain = urlparse(source_url).netloc
+            
+            # Rate limit: wait at least 1 second between requests to same domain
+            if domain in self._last_request_time:
+                time_since_last = time.time() - self._last_request_time[domain]
+                if time_since_last < 1.0:
+                    time.sleep(1.0 - time_since_last)
+            
+            # Fetch the page
+            response = requests.get(source_url, timeout=10, headers={
+                'User-Agent': 'Mozilla/5.0 (BiotechScanner/1.0)'
+            })
+            response.raise_for_status()
+            
+            # Update last request time
+            self._last_request_time[domain] = time.time()
+            
+            # Parse HTML
+            soup = BeautifulSoup(response.text, 'html.parser')
+            text = soup.get_text()
+            
+            # Use LLM to extract announcement time
+            from .ai_agent.llm_client import OpenRouterClient
+            
+            # Initialize LLM client (this is cheap since we're using gpt-4o-mini)
+            llm_client = OpenRouterClient()
+            
+            # Extract announcement time using LLM
+            timing_info = llm_client.extract_announcement_time(text, source_url)
+            
+            if timing_info:
+                logger.info(f"LLM extracted timing for {ticker}: {timing_info}")
+                logger.info(f"  Source URL: {source_url}")
+                return timing_info
+            else:
+                logger.info(f"LLM found no announcement time for {ticker}")
+                logger.info(f"  Source URL: {source_url}")
+                    
+        except Exception as e:
+            logger.debug(f"LLM extraction failed for {source_url}: {e}")
+            
+        return {}
     
     def _parse_catalyst_date(self, date_value: Any) -> Optional[datetime]:
         """
@@ -353,7 +420,9 @@ class DataSynchronizer:
                 'updated': 0,
                 'errors': 0,
                 'companies_not_found': 0,
-                'interrupted': False
+                'interrupted': False,
+                'timing_extracted': 0,
+                'timing_not_found': 0
             }
             
             for catalyst_data in tqdm(catalysts_data, desc="Processing historical catalysts"):
@@ -414,6 +483,19 @@ class DataSynchronizer:
                     if catalyst_data.get('id'):
                         catalyst_attrs['biopharma_id'] = catalyst_data['id']
                     
+                    # Extract announcement timing - pass full catalyst data
+                    timing_info = self._extract_announcement_timing(ticker, catalyst_data)
+                    if timing_info:
+                        # Only store the standard fields in the database
+                        catalyst_attrs['announcement_time'] = timing_info.get('announcement_time')
+                        catalyst_attrs['announcement_timing'] = timing_info.get('announcement_timing')
+                        
+                        # Track extraction statistics
+                        stats['timing_extracted'] += 1
+                        logger.debug(f"Extracted timing for {ticker}: {timing_info.get('announcement_timing')}")
+                    else:
+                        stats['timing_not_found'] += 1
+                    
                     if existing:
                         # Update existing catalyst
                         for key, value in catalyst_attrs.items():
@@ -450,8 +532,17 @@ class DataSynchronizer:
         logger.info(f"  - Companies not found: {stats['companies_not_found']}")
         logger.info(f"  - Errors: {stats['errors']}")
         logger.info(f"  - Total catalysts in database: {stats['created'] + stats['updated']}")
+        
+        # Timing extraction statistics
+        logger.info(f"\nTiming extraction results:")
+        logger.info(f"  - Total timing extracted: {stats['timing_extracted']}")
+        logger.info(f"  - Timing not found: {stats['timing_not_found']}")
+        if stats['timing_extracted'] > 0:
+            success_rate = (stats['timing_extracted'] / (stats['timing_extracted'] + stats['timing_not_found']) * 100)
+            logger.info(f"  - Extraction success rate: {success_rate:.1f}%")
+        
         if stats.get('interrupted'):
-            logger.info("  - Status: INTERRUPTED BY USER")
+            logger.info("\n  - Status: INTERRUPTED BY USER")
     
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""
