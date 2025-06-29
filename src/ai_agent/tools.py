@@ -19,46 +19,25 @@ class CatalystAnalysisTools:
     def __init__(self):
         self.session = get_db_session()
     
-    def get_historical_success_rate(self, stage: str, indication: Optional[str] = None) -> Dict[str, Any]:
+    def get_historical_catalysts(self, stage: str, indication: Optional[str] = None) -> Dict[str, Any]:
         """
-        Calculate historical success rates for catalysts by stage and optionally by indication.
+        Get historical catalyst data for similar stage and indication.
+        Provides raw catalyst outcomes for LLM to analyze patterns.
         
         Returns:
-            - success_rate: percentage of positive outcomes
-            - total_events: number of historical catalysts analyzed
-            - positive_outcomes: number of successful catalysts
-            - average_price_change: average stock price change around catalyst
+            - total_events: number of historical catalysts found
+            - note: descriptive message about the data
+            - catalyst_details: list of historical catalysts with full outcome text and price changes
         """
         query = self.session.query(HistoricalCatalyst).filter(
             HistoricalCatalyst.stage.ilike(f'%{stage}%')
         )
         
-        if indication and isinstance(indication, str):
-            # For better matching, search for key terms from the indication
-            # Split indication into key terms and search for the most specific ones
-            key_terms = []
-            
-            # Extract disease-specific terms (avoid generic words)
-            stop_words = {'lung', 'metastatic', 'recurrent', 'advanced', 'pediatric', 'adult'}
-            indication_words = indication.lower().split()
-            
-            # Look for specific disease terms
-            for word in indication_words:
-                if word not in stop_words and len(word) > 3:
-                    key_terms.append(word)
-            
-            # If we have specific disease terms, use them
-            if key_terms:
-                # For diseases like "osteosarcoma", search for that specific term
-                most_specific_term = max(key_terms, key=len)
-                query = query.filter(
-                    HistoricalCatalyst.drug_indication.ilike(f'%{most_specific_term}%')
-                )
-            else:
-                # Fallback to full indication
-                query = query.filter(
-                    HistoricalCatalyst.drug_indication.ilike(f'%{indication}%')
-                )
+        if indication:
+            # Simple indication matching
+            query = query.filter(
+                HistoricalCatalyst.drug_indication.ilike(f'%{indication}%')
+            )
         
         catalysts = query.all()
         
@@ -72,19 +51,8 @@ class CatalystAnalysisTools:
         # Include ALL catalyst events for LLM to analyze
         catalyst_details = []
         for catalyst in catalysts:  # Include all catalysts, not limited
-            # Check if we have stored timing info
-            stored_timing = None
-            if hasattr(catalyst, 'announcement_timing') and catalyst.announcement_timing:
-                stored_timing = {
-                    'announcement_time': catalyst.announcement_time,
-                    'announcement_timing': catalyst.announcement_timing
-                }
-            
-            price_change, timing_note = self._calculate_price_change(
-                catalyst.company_id, 
-                catalyst.catalyst_date,
-                stored_timing=stored_timing
-            )
+            # Use the pre-calculated 3-day price change
+            price_change = catalyst.price_change_3d
             
             catalyst_details.append({
                 "date": catalyst.catalyst_date.isoformat() if catalyst.catalyst_date else None,
@@ -94,8 +62,7 @@ class CatalystAnalysisTools:
                 "stage": catalyst.stage,
                 "outcome": catalyst.catalyst_text,
                 "source_url": catalyst.catalyst_source,
-                "price_change": price_change,
-                "price_change_note": timing_note
+                "price_change_3d": price_change
             })
         
         return {
@@ -108,6 +75,7 @@ class CatalystAnalysisTools:
                                 drug_name: Optional[str] = None) -> Dict[str, Any]:
         """
         Get a company's historical track record, optionally filtered by indication or drug.
+        Provides raw catalyst outcomes for LLM to analyze patterns.
         
         Args:
             company_id: Company ID
@@ -116,10 +84,8 @@ class CatalystAnalysisTools:
         
         Returns:
             - total_events: number of relevant historical events
-            - positive_outcomes: number of successful outcomes
-            - negative_outcomes: number of failed outcomes
-            - success_rate: success rate for this specific context
-            - recent_catalysts: list of recent catalyst outcomes
+            - note: descriptive message about the data
+            - recent_catalysts: list of catalyst outcomes with full text and price changes
         """
         # Build query for historical catalysts
         query = self.session.query(HistoricalCatalyst).filter(
@@ -169,19 +135,8 @@ class CatalystAnalysisTools:
         # Format all relevant catalysts for LLM analysis
         recent_catalysts = []
         for h in historical:  # All catalysts
-            # Check if we have stored timing info
-            stored_timing = None
-            if hasattr(h, 'announcement_timing') and h.announcement_timing:
-                stored_timing = {
-                    'announcement_time': h.announcement_time,
-                    'announcement_timing': h.announcement_timing
-                }
-            
-            price_change, timing_note = self._calculate_price_change(
-                company_id,
-                h.catalyst_date,
-                stored_timing=stored_timing
-            )
+            # Use the pre-calculated 3-day price change
+            price_change = h.price_change_3d
             
             recent_catalysts.append({
                 "date": h.catalyst_date.isoformat() if h.catalyst_date else None,
@@ -190,8 +145,7 @@ class CatalystAnalysisTools:
                 "stage": h.stage,
                 "outcome": h.catalyst_text,  # Full text for LLM analysis
                 "source_url": h.catalyst_source,
-                "price_change": price_change,
-                "price_change_note": timing_note
+                "price_change_3d": price_change
             })
         
         return {
@@ -279,36 +233,6 @@ class CatalystAnalysisTools:
         print(f"Starting LLM-driven research for {drug_info['name']}")
         print(f"The AI can search both SEC filings (via FAISS) and press releases (via Google)")
         print(f"{'='*60}")
-        
-        # Print initial context
-        print("\n📋 COMPLETE INITIAL CONTEXT PROVIDED TO LLM:")
-        print("="*60)
-        print("DRUG INFORMATION:")
-        print(f"  Drug: {drug_info['name']}")
-        print(f"  Company: {drug_info['company']} ({drug_info['ticker']})")
-        print(f"  Stage: {drug_info['stage']}")
-        print(f"  Indication: {drug_info['indication']}")
-        print(f"  Catalyst Date: {drug_info['catalyst_date']}")
-        
-        print("\nHISTORICAL ANALYSIS:")
-        hist = context['historical_analysis']
-        print(f"  Total Events: {hist.get('total_events', 0)}")
-        print(f"  Note: {hist.get('note', '')}")
-        print(f"  All {hist.get('total_events', 0)} events provided to LLM for analysis")
-        
-        print("\nCOMPANY TRACK RECORD:")
-        track = context['company_track_record']
-        print(f"  Total Events: {track.get('total_events', 0)}")
-        print(f"  Note: {track.get('note', '')}")
-        print(f"  All {track.get('total_events', 0)} events provided to LLM for analysis")
-        
-        print("\nFINANCIAL HEALTH:")
-        fin = context['financial_health']
-        print(f"  Cash on Hand: ${fin.get('cash_on_hand', 0):,.0f}")
-        print(f"  Annual Revenue: ${fin.get('revenue', 0):,.0f}")
-        print(f"  Market Cap: ${fin.get('market_cap', 0):,.0f}")
-        print(f"  Cash Runway: Will search for company guidance in SEC filings")
-        print("="*60)
         
         for iteration in range(max_searches):
             print(f"\n--- Search Iteration {iteration + 1} ---")
@@ -598,86 +522,7 @@ class CatalystAnalysisTools:
         competitors.sort(key=lambda x: x['market_cap'], reverse=True)
         return competitors[:10]
     
-    def _calculate_price_change(self, company_id: int, catalyst_date: datetime, 
-                               days_before: int = 5, days_after: int = 5,
-                               stored_timing: Optional[Dict[str, Any]] = None) -> tuple[Optional[float], Optional[str]]:
-        """
-        Calculate price change around a catalyst event using stored timing information.
-        Returns tuple of (price_change, timing_note)
-        """
-        if not catalyst_date:
-            return None, None
-        
-        # Default to catalyst date
-        announcement_date = catalyst_date
-        timing_note = None
-        adjust_to_next_day = False
-        
-        # Use stored timing info if available
-        if stored_timing:
-            timing_type = stored_timing.get('announcement_timing', '')
-            announcement_time = stored_timing.get('announcement_time', '')
-            
-            if timing_type == 'AFTER-HOURS':
-                adjust_to_next_day = True
-                timing_note = f"After-hours announcement ({announcement_time})"
-            elif timing_type == 'PRE-MARKET':
-                timing_note = f"Pre-market announcement ({announcement_time})"
-            elif timing_type == 'MARKET-HOURS':
-                timing_note = f"Market hours announcement ({announcement_time})"
-        
-        # Adjust dates based on timing
-        if adjust_to_next_day:
-            # For after-hours announcements only, price impact starts next trading day
-            # Find next trading day
-            test_date = announcement_date + timedelta(days=1)
-            while test_date.weekday() >= 5:  # Skip weekends
-                test_date += timedelta(days=1)
-            
-            # Check if next day has trading data
-            has_data = self.session.query(StockData).filter(
-                and_(
-                    StockData.company_id == company_id,
-                    StockData.date == test_date
-                )
-            ).first()
-            
-            if has_data:
-                announcement_date = test_date
-            
-        before_date = announcement_date - timedelta(days=days_before)
-        after_date = announcement_date + timedelta(days=days_after)
-        
-        # Get price on the day before announcement (not average)
-        price_before_query = self.session.query(StockData.close).filter(
-            and_(
-                StockData.company_id == company_id,
-                StockData.date < announcement_date
-            )
-        ).order_by(StockData.date.desc()).first()
-        
-        price_before = price_before_query[0] if price_before_query else None
-        
-        # Get price on announcement day and following days
-        price_after = self.session.query(func.avg(StockData.close)).filter(
-            and_(
-                StockData.company_id == company_id,
-                StockData.date >= announcement_date,
-                StockData.date <= after_date
-            )
-        ).scalar()
-        
-        if price_before and price_after and price_before > 0:
-            price_change = ((price_after - price_before) / price_before) * 100
-            return price_change, timing_note
-        
-        # Debug: print why we're returning None
-        if not price_before:
-            print(f"   DEBUG: No price data found before {announcement_date}")
-        if not price_after:
-            print(f"   DEBUG: No price data found after {announcement_date} (looking up to {after_date})")
-        
-        return None, None
+    # Note: _calculate_price_change method removed - we now use pre-calculated 3-day price changes from the database
     
     
     def search_company_press_releases(self, company_name: str, ticker: str, 

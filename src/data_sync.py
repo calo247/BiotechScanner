@@ -6,11 +6,6 @@ from typing import Dict, Any, Optional
 from dateutil import parser as date_parser
 from tqdm import tqdm
 import signal
-import time
-import requests
-from bs4 import BeautifulSoup
-import re
-from urllib.parse import urlparse
 
 from .api_clients.biopharma_client import biopharma_client
 from .api_clients.polygon_client import polygon_client
@@ -32,8 +27,6 @@ class DataSynchronizer:
         self.polygon_client = polygon_client
         self.sec_client = sec_client
         self.interrupted = False
-        # Track last request time per domain for rate limiting
-        self._last_request_time = {}
         
         # Set up signal handler for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -43,65 +36,55 @@ class DataSynchronizer:
         logger.info("\n\nReceived interrupt signal. Finishing current drug and stopping...")
         self.interrupted = True
     
-    def _extract_announcement_timing(self, ticker: str, catalyst_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _calculate_3day_price_change(self, company_id: int, catalyst_date: datetime, db) -> Optional[float]:
         """
-        Extract announcement timing using LLM from the source URL.
+        Calculate 3-day price change from catalyst date.
         
         Args:
-            ticker: Stock ticker
-            catalyst_data: Full catalyst data including date, drug_name, and source URL
+            company_id: Company database ID
+            catalyst_date: Date of the catalyst event
+            db: Database session
             
         Returns:
-            Dict with timing information or empty dict if unable to extract
+            3-day price change percentage or None if unable to calculate
         """
-        source_url = catalyst_data.get('catalyst_source', '')
-        if not source_url:
-            return {}
+        if not catalyst_date:
+            return None
         
         try:
-            # Extract domain for rate limiting
-            domain = urlparse(source_url).netloc
+            # Get T+0 price (catalyst date)
+            t0_price = db.query(StockData).filter(
+                StockData.company_id == company_id,
+                StockData.date >= catalyst_date
+            ).order_by(StockData.date.asc()).first()
             
-            # Rate limit: wait at least 1 second between requests to same domain
-            if domain in self._last_request_time:
-                time_since_last = time.time() - self._last_request_time[domain]
-                if time_since_last < 1.0:
-                    time.sleep(1.0 - time_since_last)
+            if not t0_price:
+                logger.debug(f"No stock data found on or after catalyst date {catalyst_date}")
+                return None
             
-            # Fetch the page
-            response = requests.get(source_url, timeout=10, headers={
-                'User-Agent': 'Mozilla/5.0 (BiotechScanner/1.0)'
-            })
-            response.raise_for_status()
+            # Count 3 trading days from T+0
+            # We need to find the 4th trading day (T+0, T+1, T+2, T+3)
+            trading_days = db.query(StockData).filter(
+                StockData.company_id == company_id,
+                StockData.date >= t0_price.date
+            ).order_by(StockData.date.asc()).limit(4).all()
             
-            # Update last request time
-            self._last_request_time[domain] = time.time()
+            if len(trading_days) < 4:
+                logger.debug(f"Not enough trading days after catalyst (found {len(trading_days)}, need 4)")
+                return None
             
-            # Parse HTML
-            soup = BeautifulSoup(response.text, 'html.parser')
-            text = soup.get_text()
+            t3_price = trading_days[3]  # 0-indexed, so [3] is the 4th day (T+3)
             
-            # Use LLM to extract announcement time
-            from .ai_agent.llm_client import OpenRouterClient
+            # Calculate percentage change
+            price_change = ((t3_price.close - t0_price.close) / t0_price.close) * 100
             
-            # Initialize LLM client (this is cheap since we're using gpt-4o-mini)
-            llm_client = OpenRouterClient()
+            logger.debug(f"3-day price change: T+0={t0_price.date} (${t0_price.close:.2f}) -> T+3={t3_price.date} (${t3_price.close:.2f}) = {price_change:.2f}%")
             
-            # Extract announcement time using LLM
-            timing_info = llm_client.extract_announcement_time(text, source_url)
+            return round(price_change, 2)
             
-            if timing_info:
-                logger.info(f"LLM extracted timing for {ticker}: {timing_info}")
-                logger.info(f"  Source URL: {source_url}")
-                return timing_info
-            else:
-                logger.info(f"LLM found no announcement time for {ticker}")
-                logger.info(f"  Source URL: {source_url}")
-                    
         except Exception as e:
-            logger.debug(f"LLM extraction failed for {source_url}: {e}")
-            
-        return {}
+            logger.error(f"Error calculating 3-day price change: {e}")
+            return None
     
     def _parse_catalyst_date(self, date_value: Any) -> Optional[datetime]:
         """
@@ -421,8 +404,8 @@ class DataSynchronizer:
                 'errors': 0,
                 'companies_not_found': 0,
                 'interrupted': False,
-                'timing_extracted': 0,
-                'timing_not_found': 0
+                'price_changes_calculated': 0,
+                'price_changes_failed': 0
             }
             
             for catalyst_data in tqdm(catalysts_data, desc="Processing historical catalysts"):
@@ -483,29 +466,26 @@ class DataSynchronizer:
                     if catalyst_data.get('id'):
                         catalyst_attrs['biopharma_id'] = catalyst_data['id']
                     
-                    # Extract announcement timing - pass full catalyst data
-                    timing_info = self._extract_announcement_timing(ticker, catalyst_data)
-                    if timing_info:
-                        # Only store the standard fields in the database
-                        catalyst_attrs['announcement_time'] = timing_info.get('announcement_time')
-                        catalyst_attrs['announcement_timing'] = timing_info.get('announcement_timing')
-                        
-                        # Track extraction statistics
-                        stats['timing_extracted'] += 1
-                        logger.debug(f"Extracted timing for {ticker}: {timing_info.get('announcement_timing')}")
-                    else:
-                        stats['timing_not_found'] += 1
-                    
                     if existing:
                         # Update existing catalyst
                         for key, value in catalyst_attrs.items():
                             setattr(existing, key, value)
+                        catalyst = existing
                         stats['updated'] += 1
                     else:
                         # Create new catalyst
                         catalyst = HistoricalCatalyst(**catalyst_attrs)
                         db.add(catalyst)
                         stats['created'] += 1
+                    
+                    # Calculate 3-day price change
+                    price_change = self._calculate_3day_price_change(company.id, catalyst_date, db)
+                    if price_change is not None:
+                        catalyst.price_change_3d = price_change
+                        stats['price_changes_calculated'] += 1
+                        logger.debug(f"Calculated 3-day price change for {ticker}: {price_change:.2f}%")
+                    else:
+                        stats['price_changes_failed'] += 1
                     
                     # Commit every 100 catalysts to avoid memory issues
                     if (stats['created'] + stats['updated']) % 100 == 0:
@@ -533,16 +513,76 @@ class DataSynchronizer:
         logger.info(f"  - Errors: {stats['errors']}")
         logger.info(f"  - Total catalysts in database: {stats['created'] + stats['updated']}")
         
-        # Timing extraction statistics
-        logger.info(f"\nTiming extraction results:")
-        logger.info(f"  - Total timing extracted: {stats['timing_extracted']}")
-        logger.info(f"  - Timing not found: {stats['timing_not_found']}")
-        if stats['timing_extracted'] > 0:
-            success_rate = (stats['timing_extracted'] / (stats['timing_extracted'] + stats['timing_not_found']) * 100)
-            logger.info(f"  - Extraction success rate: {success_rate:.1f}%")
+        # Price change calculation statistics
+        logger.info(f"\nPrice change calculation results:")
+        logger.info(f"  - 3-day changes calculated: {stats['price_changes_calculated']}")
+        logger.info(f"  - Calculations failed (no stock data): {stats['price_changes_failed']}")
+        if stats['price_changes_calculated'] + stats['price_changes_failed'] > 0:
+            success_rate = (stats['price_changes_calculated'] / (stats['price_changes_calculated'] + stats['price_changes_failed']) * 100)
+            logger.info(f"  - Calculation success rate: {success_rate:.1f}%")
         
         if stats.get('interrupted'):
             logger.info("\n  - Status: INTERRUPTED BY USER")
+    
+    def recalculate_historical_price_changes(self):
+        """
+        Recalculate 3-day price changes for all historical catalysts.
+        Useful when stock data is updated after catalysts are synced.
+        """
+        logger.info("Recalculating 3-day price changes for all historical catalysts...")
+        
+        stats = {
+            'total_processed': 0,
+            'calculated': 0,
+            'failed': 0,
+            'skipped_no_date': 0
+        }
+        
+        with get_db() as db:
+            # Get all historical catalysts
+            catalysts = db.query(HistoricalCatalyst).all()
+            total = len(catalysts)
+            
+            logger.info(f"Processing {total} historical catalysts...")
+            
+            for catalyst in tqdm(catalysts, desc="Calculating price changes"):
+                stats['total_processed'] += 1
+                
+                if not catalyst.catalyst_date:
+                    stats['skipped_no_date'] += 1
+                    continue
+                
+                # Calculate 3-day price change
+                price_change = self._calculate_3day_price_change(
+                    catalyst.company_id, 
+                    catalyst.catalyst_date, 
+                    db
+                )
+                
+                if price_change is not None:
+                    catalyst.price_change_3d = price_change
+                    stats['calculated'] += 1
+                else:
+                    catalyst.price_change_3d = None
+                    stats['failed'] += 1
+                
+                # Commit every 100 records
+                if stats['total_processed'] % 100 == 0:
+                    db.commit()
+            
+            # Final commit
+            db.commit()
+        
+        # Log summary
+        logger.info(f"\nPrice change recalculation complete:")
+        logger.info(f"  - Total processed: {stats['total_processed']}")
+        logger.info(f"  - Successfully calculated: {stats['calculated']}")
+        logger.info(f"  - Failed (no stock data): {stats['failed']}")
+        logger.info(f"  - Skipped (no catalyst date): {stats['skipped_no_date']}")
+        
+        if stats['calculated'] + stats['failed'] > 0:
+            success_rate = (stats['calculated'] / (stats['calculated'] + stats['failed']) * 100)
+            logger.info(f"  - Success rate: {success_rate:.1f}%")
     
     def get_sync_status(self) -> Dict[str, Any]:
         """Get current synchronization status."""

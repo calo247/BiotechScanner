@@ -20,6 +20,10 @@ BiotechScanner is a Python-based tool designed to automate the process of search
 - Implements 12-hour caching to respect rate limits (1-2 calls/day max)
 - Stores complete drug information including clinical trial phases, catalyst dates, and indications
 - Premium API: Historical catalyst endpoint for past events
+- Calculates 3-day price changes for historical catalysts:
+  - Uses 3 trading days (not calendar days) after catalyst date
+  - Formula: (Price at T+3 close - Price at T+0 close) / Price at T+0 close * 100
+  - Stored in `price_change_3d` field (nullable for missing data)
 - Graceful interrupt handling (Ctrl+C)
 - Removed opaque scoring fields (is_big_mover, is_suspected_mover, event_score)
 
@@ -67,6 +71,7 @@ python3 sync_data.py --stocks --ticker MRNA # Single ticker
 python3 sync_data.py --historical
 python3 sync_data.py --historical --force
 python3 sync_data.py --historical --limit 100 # For testing
+python3 sync_data.py --historical --recalc-prices # Recalculate 3-day price changes
 
 # Sync SEC filings
 python3 sync_data.py --sec
@@ -132,6 +137,7 @@ python3 sync_data.py --all --force # Force refresh drugs
 - `catalyst_date`: Event date
 - `catalyst_text`: Outcome description
 - `catalyst_source`: URL
+- `price_change_3d`: 3-day price change percentage (Float, nullable)
 - `updated_at`: Timestamp
 
 ### SECFiling
@@ -372,6 +378,14 @@ flask-cors>=4.0.0
 - Added PDUFA stage filter for FDA action dates
 - Created "Reset All Filters" functionality with dynamic enable/disable
 - Combined drug name and indication display in single column for cleaner layout
+
+#### 7. Historical Catalyst Price Analysis
+- Replaced announcement timing extraction with 3-day price change calculation
+- Removed `announcement_time` and `announcement_timing` columns
+- Added `price_change_3d` column to track post-catalyst stock performance
+- Calculates percentage change using 3 trading days (not calendar days)
+- Added `--recalc-prices` command to recalculate price changes for existing catalysts
+- Handles missing stock data gracefully (nullable field)
 
 ## Web Application Usage
 

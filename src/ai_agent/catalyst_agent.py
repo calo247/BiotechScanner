@@ -127,14 +127,14 @@ class CatalystResearchAgent:
         print(f"Main stage extracted: {main_stage}")
         print("="*60)
         
-        analysis_data["historical_analysis"] = self.tools.get_historical_success_rate(
+        analysis_data["historical_analysis"] = self.tools.get_historical_catalysts(
             stage=main_stage,
             indication=indication
         )
         
         # Print historical analysis for logging
         print("\n" + "="*60)
-        print("📊 HISTORICAL SUCCESS RATE ANALYSIS")
+        print("📊 HISTORICAL CATALYST ANALYSIS")
         print("="*60)
         # Flush output to ensure header appears before any fetch logs
         import sys
@@ -157,10 +157,8 @@ class CatalystResearchAgent:
                 print(f"   Full Outcome Text: {cat['outcome']}")
                 if cat.get('source_url'):
                     print(f"   Source: {cat['source_url']}")
-                if cat.get('price_change') is not None:
-                    print(f"   Price Change: {cat['price_change']:.1f}%")
-                    if cat.get('price_change_note'):
-                        print(f"   Note: {cat['price_change_note']}")
+                if cat.get('price_change_3d') is not None:
+                    print(f"   3-Day Price Change: {cat['price_change_3d']:.1f}%")
                 elif cat.get('source_url'):
                     # If we have a URL but no price change, it means no price data was available
                     print(f"   Price Change: No data available (likely future event or insufficient trading history)")
@@ -198,10 +196,8 @@ class CatalystResearchAgent:
                 print(f"   Full Outcome Text: {cat['outcome']}")
                 if cat.get('source_url'):
                     print(f"   Source: {cat['source_url']}")
-                if cat.get('price_change') is not None:
-                    print(f"   Price Change: {cat['price_change']:.1f}%")
-                    if cat.get('price_change_note'):
-                        print(f"   Note: {cat['price_change_note']}")
+                if cat.get('price_change_3d') is not None:
+                    print(f"   3-Day Price Change: {cat['price_change_3d']:.1f}%")
                 elif cat.get('source_url'):
                     # If we have a URL but no price change, it means no price data was available
                     print(f"   Price Change: No data available (likely future event or insufficient trading history)")

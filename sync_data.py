@@ -70,6 +70,11 @@ def main():
         action='store_true',
         help='Perform initial load with full historical data (use with --stocks)'
     )
+    parser.add_argument(
+        '--recalc-prices',
+        action='store_true',
+        help='Recalculate 3-day price changes for all historical catalysts'
+    )
     
     args = parser.parse_args()
     
@@ -77,7 +82,7 @@ def main():
     init_db()
     
     # Default behavior if no flags specified
-    if not any([args.drugs, args.stocks, args.sec, args.historical, args.all, args.status]):
+    if not any([args.drugs, args.stocks, args.sec, args.historical, args.all, args.status, args.recalc_prices]):
         args.all = True  # Default to full sync
     
     # Handle commands
@@ -163,6 +168,14 @@ def main():
             print(f"Limiting to {args.limit} catalysts")
         
         data_synchronizer.sync_historical_catalysts(force_refresh=args.force, limit=args.limit)
+    
+    elif args.recalc_prices:
+        # Recalculate price changes for historical catalysts
+        print("\n=== Recalculating 3-Day Price Changes ===")
+        print("This will recalculate price changes for all historical catalysts.")
+        print("Useful after updating stock data.\n")
+        
+        data_synchronizer.recalculate_historical_price_changes()
     
     elif args.all:
         # Sync everything

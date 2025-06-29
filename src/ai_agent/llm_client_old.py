@@ -290,8 +290,7 @@ Based on this comprehensive data, provide a detailed catalyst analysis report in
             formatted.append(
                 f"- {cat.get('date', 'Unknown date')}: {cat.get('drug', 'Unknown drug')}{indication} "
                 f"({cat.get('stage', 'Unknown stage')})\n"
-                f"  Outcome: {outcome}" +
-                (f"\n  3-Day Price Change: {cat.get('price_change_3d', 0):.1f}%" if cat.get('price_change_3d') is not None else "")
+                f"  Outcome: {outcome}"
             )
         
         return "\n".join(formatted)
@@ -362,11 +361,9 @@ CATALYST INFORMATION:
 - Indication: {context['drug_info']['indication']}
 - Catalyst Date: {context['drug_info']['catalyst_date']}
 
-HISTORICAL CATALYST ANALYSIS ({context.get('historical_analysis', {}).get('total_events', 0)} similar events):
-{self._format_historical_catalysts(context.get('historical_analysis', {}).get('catalyst_details', [])[:10])}
-
-COMPANY TRACK RECORD ({context.get('company_track_record', {}).get('total_events', 0)} company events):
-{self._format_company_catalysts(context.get('company_track_record', {}).get('recent_catalysts', [])[:10])}
+CONTEXT FROM OTHER SOURCES:
+- Historical Events Found: {context.get('historical_analysis', {}).get('total_events', 0)} similar catalysts
+- Company Track Record: {context.get('company_track_record', {}).get('total_events', 0)} relevant company events
 
 COMPLETE FINANCIAL DATA (from XBRL):
 - Cash on Hand: ${context.get('financial_health', {}).get('cash_on_hand', 0):,.0f}
@@ -401,13 +398,7 @@ IMPORTANT: We have basic financial metrics from XBRL, but you SHOULD search for:
 DO NOT search for basic metrics like cash balance or revenue (we have those).
 DO search for forward-looking statements about cash sufficiency.
 
-IMPORTANT: Review the historical catalyst outcomes and 3-day price changes above. Look for patterns in:
-- What caused positive vs negative outcomes in similar catalysts
-- Common safety issues or efficacy concerns that led to failures
-- Key success factors that led to positive outcomes
-- How the market reacted (3-day price changes) to different types of outcomes
-
-Based on what you know from the historical context and what has been searched, what should we search for next? Consider:
+Based on what you know and what has been searched, what should we search for next? Consider:
 1. CASH RUNWAY: Have we found management's guidance on how long their cash will last?
 2. What critical CLINICAL or REGULATORY information is still missing?
 3. What findings about the DRUG DEVELOPMENT need follow-up investigation?
@@ -552,3 +543,135 @@ Provide a concise summary of key findings and indicate if follow-up searches are
                 "key_findings": f"Found {len(results)} results mentioning {query}",
                 "follow_up_needed": False
             }
+    
+    def extract_announcement_time(self, text: str, url: str) -> Dict[str, Any]:
+        """
+        Use LLM to extract the actual announcement time from a press release or SEC filing.
+        Distinguishes between announcement time and other times (conference calls, etc).
+        
+        Args:
+            text: The document text (first 3000 chars)
+            url: The URL of the document (for context)
+            
+        Returns:
+            Dictionary with announcement timing info or empty dict if not found
+        """
+        prompt = f"""Extract ONLY the announcement/publication TIME (not date) from this document.
+        
+IMPORTANT: 
+- Find the TIME when the PRESS RELEASE was ISSUED/ANNOUNCED/PUBLISHED
+- Look for phrases like "announced today at", "issued at", "released at", "published"
+- For SEC filings, look for filing timestamps
+
+CRITICAL: DO NOT USE THESE TIMES:
+- Conference call times (e.g., "conference call at 8:00 AM")
+- Webcast times (e.g., "webcast scheduled for")
+- Investor call times
+- Management presentation times
+- Dial-in times
+- ANY time that is for a FUTURE EVENT
+
+The announcement time is when the NEWS was RELEASED, not when a call/webcast will happen.
+
+If the document says something like:
+"Company announced results today... will host a conference call at 8:00 AM"
+→ The 8:00 AM is NOT the announcement time (that's the call time)
+→ Look for when "today" the announcement was made
+
+RULES:
+- announcement_time MUST be a TIME (e.g., "7:30 AM ET"), NOT a date
+- If you only find a date with NO TIME, return {{"found": false}}
+- If you only find conference call times, return {{"found": false}}
+- DO NOT GUESS - if there's no announcement time mentioned, return {{"found": false}}
+
+Document URL: {url}
+
+Text:
+{text[:3000]}
+
+Return ONLY a JSON object in one of these formats:
+{{"announcement_time": "7:30 AM ET", "announcement_timing": "PRE-MARKET"}}
+{{"announcement_time": "4:15 PM ET", "announcement_timing": "AFTER-HOURS"}}
+{{"announcement_time": "10:00 AM ET", "announcement_timing": "MARKET-HOURS"}}
+{{"found": false}}
+
+Market hours are 9:30 AM - 4:00 PM ET. Pre-market is before 9:30 AM, after-hours is after 4:00 PM."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model="openai/gpt-4o-mini",  # Use cheap, fast model for this simple task
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,  # Low temperature for consistency
+                max_tokens=100
+            )
+            
+            # Extract JSON from response
+            response_text = response.choices[0].message.content.strip()
+            
+            # Try to parse JSON directly
+            try:
+                result = json.loads(response_text)
+                
+                # If found is false, return empty dict
+                if result.get("found") is False:
+                    return {}
+                
+                # If we have timing info, validate it's actually a time
+                if "announcement_time" in result and "announcement_timing" in result:
+                    time_str = result["announcement_time"]
+                    timing = result["announcement_timing"]
+                    
+                    # Check if it contains month names (indicating it's a date, not a time)
+                    months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                             'july', 'august', 'september', 'october', 'november', 'december',
+                             'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+                    if any(month in time_str.lower() for month in months):
+                        # If it contains a month, reject it
+                        print(f"Warning: LLM returned date instead of time: {time_str}")
+                        return {}
+                    
+                    # Reject MARKET-HOURS since companies rarely announce during market hours
+                    if timing == "MARKET-HOURS":
+                        print(f"Warning: Rejecting MARKET-HOURS timing (companies rarely announce during trading hours)")
+                        return {}
+                    
+                    return {
+                        "announcement_time": time_str,
+                        "announcement_timing": timing
+                    }
+                
+            except json.JSONDecodeError:
+                # Try to find JSON in the response
+                json_match = re.search(r'\{[^}]+\}', response_text, re.DOTALL)
+                if json_match:
+                    try:
+                        result = json.loads(json_match.group())
+                        if result.get("found") is False:
+                            return {}
+                        if "announcement_time" in result and "announcement_timing" in result:
+                            time_str = result["announcement_time"]
+                            timing = result["announcement_timing"]
+                            
+                            # Check if it contains month names (indicating it's a date, not a time)
+                            months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                                     'july', 'august', 'september', 'october', 'november', 'december',
+                                     'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+                            if any(month in time_str.lower() for month in months):
+                                print(f"Warning: LLM returned date instead of time: {time_str}")
+                                return {}
+                            
+                            # Reject MARKET-HOURS since companies rarely announce during market hours
+                            if timing == "MARKET-HOURS":
+                                print(f"Warning: Rejecting MARKET-HOURS timing (companies rarely announce during trading hours)")
+                                return {}
+                            
+                            return result
+                    except:
+                        pass
+            
+            return {}
+            
+        except Exception as e:
+            print(f"Error extracting announcement time with LLM: {e}")
+            return {}
+    
