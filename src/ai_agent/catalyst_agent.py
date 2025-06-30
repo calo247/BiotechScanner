@@ -66,8 +66,6 @@ class CatalystResearchAgent:
         print(f"Market Info: {drug.market_info}")
         print(f"Note: {drug.note}")
         print(f"Catalyst Source: {drug.catalyst_source}")
-        print(f"Last Update Name: {drug.last_update_name}")
-        print(f"API Last Updated: {drug.api_last_updated}")
         print("="*60)
         
         # Gather all relevant data using our tools
@@ -134,15 +132,17 @@ class CatalystResearchAgent:
         
         # Print historical analysis for logging
         print("\n" + "="*60)
-        print("📊 HISTORICAL CATALYST ANALYSIS")
+        print("📊 HISTORICAL CATALYST ANALYSIS (ALL STAGES)")
         print("="*60)
         # Flush output to ensure header appears before any fetch logs
         import sys
         sys.stdout.flush()
         hist = analysis_data["historical_analysis"]
-        print(f"Stage: {main_stage}")
+        print(f"Current drug stage: {main_stage}")
         print(f"Indication: {indication}")
         print(f"Total historical events found: {hist['total_events']}")
+        if 'same_stage_count' in hist:
+            print(f"Same stage events: {hist['same_stage_count']}")
         if hist['total_events'] > 0:
             if 'note' in hist:
                 print(f"Note: {hist['note']}")
@@ -151,8 +151,9 @@ class CatalystResearchAgent:
             
             # Print ALL catalyst details, not limited
             for i, cat in enumerate(hist.get('catalyst_details', [])):
+                stage_match = " [SAME STAGE]" if cat.get('is_same_stage', False) else " [DIFFERENT STAGE]"
                 print(f"\n{i+1}. {cat['date']}: {cat['company']} - {cat['drug']}")
-                print(f"   Stage: {cat['stage']}")
+                print(f"   Stage: {cat['stage']}{stage_match}")
                 print(f"   Indication: {cat['indication']}")
                 print(f"   Full Outcome Text: {cat['outcome']}")
                 if cat.get('source_url'):
@@ -213,20 +214,16 @@ class CatalystResearchAgent:
         print("="*60)
         fin = analysis_data["financial_health"]
         print(f"Cash on hand: ${fin['cash_on_hand']:,.0f}")
-        print(f"Annual revenue: ${fin['revenue']:,.0f}")
         print(f"Market cap: ${fin['market_cap']:,.0f}")
         print(f"Cash runway: {fin['cash_runway_guidance']}")
         
-        if fin['revenue'] > 0:
-            print(f"Revenue positive: Yes")
-            if fin['market_cap'] > 0:
-                price_to_sales = fin['market_cap'] / fin['revenue']
-                print(f"Price-to-Sales ratio: {price_to_sales:.2f}x")
-        else:
-            print(f"Revenue positive: No (pre-revenue company)")
-        
         if fin['cash_on_hand'] == 0:
-            print("⚠️ WARNING: Company shows $0 cash - may indicate financial distress or stale data")
+            print("⚠️ WARNING: Company shows $0 cash - checking for data issues...")
+            print("   This could mean:")
+            print("   1. Financial data not yet synced from SEC filings")
+            print("   2. Company uses different XBRL tags for cash reporting")
+            print("   3. Company may be in financial distress")
+            print("   → Cash information will be searched in SEC filings")
         
         print("\n📝 Note: Cash runway guidance will be searched in SEC filings during research phase")
         

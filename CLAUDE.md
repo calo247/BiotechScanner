@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-BiotechScanner is a Python-based tool designed to automate the process of searching through biotech stock catalysts for trading opportunities. The tool collects data from multiple sources, stores it in a structured database, and will eventually provide AI-powered analysis of potential catalyst events.
+BiotechScanner is a Python-based tool designed to automate the process of searching through biotech stock catalysts for trading opportunities. The tool collects data from multiple sources, stores it in a structured database, and provides AI-powered analysis of potential catalyst events using RAG search and LLM-driven research.
 
 ## Current Project Status
 
@@ -44,13 +44,32 @@ BiotechScanner is a Python-based tool designed to automate the process of search
 - Stores financial metrics in structured format
 - File organization: `data/sec_filings/TICKER_CIK/filing_type/date_accession.txt.gz`
 
-#### 5. Web Application Interface
+#### 5. Web Application Interface (COMPLETED)
 - Flask-based web application for catalyst viewing and analysis
 - Professional table-based interface with sorting and search functionality
 - Detailed catalyst view pages with comprehensive drug and market information
 - Real-time search with backend API integration
+- Advanced filtering: market cap ranges, stock price ranges, custom date ranges, stage filters
 - Clickable catalyst rows for drill-down navigation
 - Clean, responsive design optimized for biotech catalyst analysis
+
+#### 6. AI-Powered Catalyst Analysis (COMPLETED)
+- LLM-driven research using Claude Sonnet 4 via OpenRouter
+- Dynamic SEC filing and press release search
+- RAG pipeline with FAISS for searching 8.5M+ document chunks
+- Historical catalyst analysis across ALL development stages
+- Company track record analysis
+- Financial health assessment (cash position, market cap)
+- Competitive landscape analysis
+- Automated report generation with success probability estimates
+
+#### 7. RAG Search Pipeline (COMPLETED)
+- FAISS vector similarity search with Product Quantization compression
+- 32x memory reduction through PQ (48 subquantizers, 8 bits)
+- On-demand text loading from compressed SEC filings
+- Multiple embedding models (all-MiniLM-L6-v2, S-PubMedBert-MS-MARCO)
+- Company-specific filtering for targeted searches
+- Integrated with AI agent for dynamic research
 
 ## Data Collection Commands
 
@@ -109,7 +128,6 @@ python3 sync_data.py --all --force # Force refresh drugs
 - `catalyst_source`: URL
 - `note`: Additional notes
 - `market_info`: Market information
-- `last_update_name`: Last update info
 - `api_last_updated`: Last API sync
 - `created_at`, `updated_at`: Timestamps
 
@@ -175,6 +193,24 @@ python3 sync_data.py --all --force # Force refresh drugs
 - `response_data`: JSON response
 - `last_fetched`: Timestamp
 
+### CatalystReport
+- `id`: Primary key
+- `drug_id`: Foreign key to Drug
+- `company_id`: Foreign key to Company
+- `report_type`: Type of analysis (default: 'full_analysis')
+- `model_used`: LLM model used (default: 'anthropic/claude-sonnet-4')
+- `report_markdown`: Full markdown report
+- `report_summary`: Brief summary
+- `success_probability`: Extracted probability (0-1)
+- `price_target_upside`: Upside potential (e.g., "200-400%")
+- `price_target_downside`: Downside risk (e.g., "50-80%")
+- `recommendation`: Investment recommendation
+- `risk_level`: Risk assessment (High/Moderate/Low)
+- `analysis_data`: JSON of raw analysis data
+- `tokens_used`: Token usage tracking
+- `generation_time_ms`: Report generation time
+- `created_at`: Timestamp
+
 ## Technical Architecture
 
 ### File Structure
@@ -194,6 +230,17 @@ BiotechScanner/
 │   │   ├── filters.py
 │   │   ├── catalyst_queries.py
 │   │   └── company_queries.py
+│   ├── ai_agent/
+│   │   ├── __init__.py
+│   │   ├── catalyst_agent.py
+│   │   ├── llm_client.py
+│   │   └── tools.py
+│   ├── rag/
+│   │   ├── __init__.py
+│   │   ├── chunk_sec_filings.py
+│   │   ├── embedding_model.py
+│   │   ├── faiss_index.py
+│   │   └── rag_search.py
 │   ├── data_sync.py
 │   └── config.py
 ├── webapp/
@@ -207,16 +254,30 @@ BiotechScanner/
 │       ├── style.css
 │       ├── range-slider.js
 │       └── stock-price-slider.js
+├── scripts/
+│   ├── runpod_index_all.py
+│   ├── migrate_historical_catalysts_price_change.py
+│   └── migrate_remove_last_update_name.py
 ├── data/
 │   ├── catalyst.db
 │   ├── api_responses/
 │   │   └── drugs_TIMESTAMP.json
-│   └── sec_filings/
-│       └── TICKER_CIK/
-│           ├── 10-K/
-│           ├── 10-Q/
-│           └── 8-K/
+│   ├── sec_filings/
+│   │   └── TICKER_CIK/
+│   │       ├── 10-K/
+│   │       ├── 10-Q/
+│   │       └── 8-K/
+│   ├── faiss_index/
+│   │   ├── faiss_general-fast_pq.index
+│   │   └── metadata_general-fast_pq.pkl
+│   └── ai_reports/
+│       └── {ticker}_{company_id}/
+│           └── {catalyst_id}/
+│               ├── {timestamp}_report.md
+│               ├── {timestamp}_analysis_data.json
+│               └── {timestamp}_terminal_log.txt
 ├── sync_data.py
+├── analyze_catalyst.py
 ├── requirements.txt
 └── .env
 ```
@@ -226,24 +287,29 @@ BiotechScanner/
 #### 1. Database Design
 - SQLAlchemy ORM for portability
 - Timezone-naive UTC datetimes throughout
-- Removed redundant fields for cleaner schema
+- Removed redundant fields for cleaner schema (e.g., last_update_name, revenue metrics)
 - JSON columns for flexible data storage
+- Added CatalystReport table for AI-generated analyses
 
 #### 2. API Integration
 - BiopharmIQ: 12-hour cache, premium historical endpoint
 - Polygon.io: Premium tier with no rate limits
 - SEC: 100ms delay between requests, dual API approach
+- OpenRouter: LLM access for AI analysis with Claude Sonnet 4
+- Google Search: Free press release search (no API key required)
 
 #### 3. Data Management
 - Smart incremental updates for stock data
 - 5-year initial load, then daily updates
 - Always refetch last day for complete data
 - Compressed SEC filing storage
+- 3-day price change calculation for historical catalysts (trading days only)
 
 #### 4. Error Handling
 - Graceful interrupt handling (Ctrl+C)
 - Transaction management
 - Proper logging throughout
+- Fallback for companies with non-standard financial reporting
 
 #### 5. Web Application Architecture
 - Flask backend with CORS support for API access
@@ -259,15 +325,38 @@ BiotechScanner/
 - Filter classes for stage normalization, date ranges, and market cap categories
 - Support for complex filters including market cap ranges, stock price ranges, and custom date ranges
 
+#### 7. AI Agent Architecture
+- LLM-driven dynamic research with up to 10 iterative searches
+- Dual search capability: SEC filings (via FAISS RAG) and press releases (via Google)
+- Historical catalyst analysis across ALL development stages (not just matching stages)
+- Intelligent search query generation based on context and previous findings
+- Comprehensive report generation with success probability estimation
+
+#### 8. RAG Pipeline Design
+- FAISS with Product Quantization (PQ) for 32x compression
+- On-demand text loading to minimize memory usage (~6GB total)
+- Multi-model embeddings (general-purpose vs biomedical)
+- Company-specific filtering for targeted searches
+- Deferred index training for optimal PQ performance
+
 ## Environment Setup
 
 ### Required Environment Variables (.env)
 
 ```bash
+# Required API Keys
 BIOPHARMA_API_KEY=your_api_key_here
 POLYGON_API_KEY=your_polygon_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# Database
 DATABASE_URL=sqlite:///data/catalyst.db
+
+# SEC Configuration
 SEC_USER_AGENT=BiotechScanner/1.0 (your.email@example.com)
+
+# Optional: SerpAPI for press releases (falls back to free Google search if not set)
+SERPAPI_KEY=your_serpapi_key_here
 ```
 
 ### Python Dependencies
@@ -279,11 +368,22 @@ python-dotenv>=1.0.0
 requests>=2.31.0
 polygon-api-client>=1.12.0
 pandas>=2.1.4
+openai>=1.0.0  # For OpenRouter LLM access
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
 
-# Development dependencies
-pytest>=7.4.3
-black>=23.12.0
-flake8>=6.1.0
+# RAG/FAISS dependencies
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Web application dependencies
+flask>=2.3.3
+flask-cors>=4.0.0
+
+# Press release search
+googlesearch-python>=1.2.3
 
 # Additional utilities
 python-dateutil>=2.8.2
@@ -291,9 +391,10 @@ tqdm>=4.66.1
 tabulate>=0.9.0
 typing-extensions>=4.9.0
 
-# Web application dependencies
-flask>=2.3.3
-flask-cors>=4.0.0
+# Development dependencies
+pytest>=7.4.3
+black>=23.12.0
+flake8>=6.1.0
 ```
 
 ## Data Volume Expectations
@@ -306,37 +407,47 @@ flask-cors>=4.0.0
 - **Financial Metrics**: ~200 metrics × 10 years × 2,000 companies = ~4M records
 - **Storage**: ~10-20GB for full SEC document storage (compressed)
 
-## Future Development Plan
+## Completed Features
 
-### Phase 1: Query Tools (Next Step)
-- Build flexible filtering system for catalysts
-- Examples:
-  - "Phase 3 catalysts in next 30 days"
-  - "FDA approvals with market cap < $500M"
-  - "Oncology drugs with upcoming data"
-- Sort by date, potential impact, market cap
+### Phase 1: Query Tools (COMPLETED)
+- ✅ Advanced filtering system with market cap/price ranges, date filters, stage filters
+- ✅ Real-time search across all catalyst fields
+- ✅ Flexible sorting by date, ticker, company, market cap, price
+- ✅ Clean API integration with web interface
 
-### Phase 2: AI Research Agent
-- Implement tool-calling paradigm
-- Tools for:
-  - SEC document search
-  - Stock price analysis
-  - Clinical trial database
-  - News search
-- RAG pipeline for document retrieval
-- Use OpenRouter for LLM flexibility
+### Phase 2: AI Research Agent (COMPLETED)
+- ✅ LLM-driven analysis using Claude Sonnet 4 via OpenRouter
+- ✅ Dynamic SEC filing search with FAISS RAG pipeline
+- ✅ Press release search via Google (free, no API key required)
+- ✅ Historical catalyst analysis with 3-day price changes
+- ✅ Comprehensive report generation with success probability
+- ✅ Automated report storage in structured folders
 
-### Phase 3: Conversational Interface
-- Chat interface for follow-up questions
-- Context persistence across conversations
-- Citation tracking for transparency
-- Ability to dive deeper into specific catalysts
+### Phase 3: Web Interface (COMPLETED)
+- ✅ Professional catalyst table with advanced filtering
+- ✅ Detailed catalyst view pages
+- ✅ Responsive design for all devices
+- ✅ RESTful API for data access
 
-### Phase 4: Enhanced Web Interface (COMPLETED)
-- ✅ Flask backend with RESTful API endpoints
-- ✅ Professional catalyst table interface with search and sorting
-- ✅ Detailed catalyst pages with comprehensive information display
-- ✅ Responsive design for desktop and mobile viewing
+## Future Development Ideas
+
+### Enhanced Analytics
+- Portfolio-level catalyst tracking
+- Email/SMS alerts for upcoming catalysts
+- Historical success rate visualization
+- Machine learning for outcome prediction
+
+### Additional Data Sources
+- Clinical trial databases (ClinicalTrials.gov)
+- FDA calendar integration
+- Patent expiration tracking
+- Insider trading analysis
+
+### Conversational Interface
+- Chat interface for natural language queries
+- Follow-up question handling
+- Multi-catalyst comparison reports
+- Export to PDF/Word formats
 
 ## Migration Notes
 
@@ -386,6 +497,25 @@ flask-cors>=4.0.0
 - Calculates percentage change using 3 trading days (not calendar days)
 - Added `--recalc-prices` command to recalculate price changes for existing catalysts
 - Handles missing stock data gracefully (nullable field)
+
+#### 8. AI Agent Implementation (NEW)
+- Built comprehensive catalyst analysis system using LLM
+- Dynamic research with up to 10 iterative searches
+- Searches both SEC filings (FAISS RAG) and press releases (Google)
+- Historical catalyst analysis now includes ALL development stages
+- Generates detailed reports with success probability estimates
+- Saves reports in structured folder: `data/ai_reports/{ticker}_{company_id}/{catalyst_id}/`
+
+#### 9. Financial Analysis Updates (NEW)
+- Removed revenue metrics (misleading for biotech due to grants/milestones)
+- Enhanced cash detection for companies with non-standard XBRL reporting
+- Better handling of distressed companies with limited financial data
+- Focus on cash position and burn rate as key metrics
+
+#### 10. Database Schema Cleanup (NEW)
+- Removed `last_update_name` field from Drug model
+- Added CatalystReport model for storing AI-generated analyses
+- Simplified function names (e.g., `get_historical_success_rate` → `get_historical_catalysts`)
 
 ## Web Application Usage
 
@@ -561,7 +691,37 @@ Example search progression:
    - Add conversation memory and context
    - Enable follow-up questions about catalysts
 
-## Catalyst Analysis Reports
+## AI Catalyst Analysis
+
+### Running Catalyst Analysis
+
+```bash
+# List upcoming catalysts
+python analyze_catalyst.py --list --days 30
+
+# Analyze specific catalyst by ID
+python analyze_catalyst.py --id 3115
+
+# Analyze catalysts for specific company
+python analyze_catalyst.py --ticker SAVA
+
+# Interactive mode (default)
+python analyze_catalyst.py
+```
+
+### Analysis Process
+
+The AI agent performs comprehensive research:
+
+1. **Historical Analysis**: Searches for similar catalysts across ALL development stages
+2. **Company Track Record**: Analyzes company's previous catalyst outcomes
+3. **Financial Health**: Assesses cash position and burn rate
+4. **SEC Filing Research**: Dynamic LLM-driven search through indexed filings
+5. **Press Release Search**: Finds recent announcements via Google
+6. **Competitive Landscape**: Identifies competing drugs in same indication
+7. **Report Generation**: Creates detailed analysis with success probability
+
+### Report Storage
 
 The `analyze_catalyst.py` script automatically saves all outputs in a structured folder format:
 
@@ -579,7 +739,7 @@ Example:
 ```
 data/
   ai_reports/
-    OSTX_1234/
+    OSTX_511/
       3025/
         20250627_143052_report.md         # Clean public report
         20250627_143052_analysis_data.json # Structured data
@@ -593,10 +753,28 @@ This structure allows you to:
 - Access the clean public report, raw data, and complete workflow
 - Maintain a complete audit trail of all catalyst analyses
 
-File contents:
-- **report.md**: Clean, professional catalyst analysis (no technical details)
-- **analysis_data.json**: Structured data including search stats and findings
-- **terminal_log.txt**: Complete terminal output with all search details, reasoning, and statistics
+### Report Contents
+
+- **report.md**: Clean, professional catalyst analysis including:
+  - Executive summary with success probability
+  - Historical precedent analysis
+  - Company track record assessment
+  - Financial runway analysis
+  - Key risks and opportunities
+  - Investment recommendation with rationale
+  
+- **analysis_data.json**: Structured data including:
+  - All historical catalysts analyzed
+  - SEC filing search results
+  - Press release findings
+  - Search statistics and iterations
+  - Financial metrics
+  
+- **terminal_log.txt**: Complete workflow including:
+  - All search queries and reasoning
+  - Full search results
+  - LLM decision-making process
+  - Performance statistics
 
 ## Usage Examples
 

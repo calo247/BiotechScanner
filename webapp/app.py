@@ -258,7 +258,6 @@ def get_catalyst_detail(catalyst_id):
             'note': drug.note,
             'market_info': drug.market_info,
             'catalyst_source': drug.catalyst_source,
-            'last_update_name': drug.last_update_name,
             'api_last_updated': drug.api_last_updated.isoformat() if drug.api_last_updated else None,
             'company': {
                 'id': drug.company.id,

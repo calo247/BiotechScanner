@@ -67,8 +67,6 @@ class Drug(Base):
     # Additional data
     note = Column(Text)
     market_info = Column(Text)
-    last_update_name = Column(Text)
-    
     # Tracking
     api_last_updated = Column(DateTime, default=utc_now)
     created_at = Column(DateTime, default=utc_now)

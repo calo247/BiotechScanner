@@ -21,36 +21,51 @@ class CatalystAnalysisTools:
     
     def get_historical_catalysts(self, stage: str, indication: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get historical catalyst data for similar stage and indication.
+        Get historical catalyst data across all stages for a given indication.
         Provides raw catalyst outcomes for LLM to analyze patterns.
         
         Returns:
             - total_events: number of historical catalysts found
             - note: descriptive message about the data
             - catalyst_details: list of historical catalysts with full outcome text and price changes
+            - same_stage_count: number of catalysts at the same stage
         """
-        query = self.session.query(HistoricalCatalyst).filter(
-            HistoricalCatalyst.stage.ilike(f'%{stage}%')
-        )
-        
+        # Get catalysts for the indication across ALL stages
         if indication:
-            # Simple indication matching
-            query = query.filter(
+            # Get all catalysts for this indication
+            query = self.session.query(HistoricalCatalyst).filter(
                 HistoricalCatalyst.drug_indication.ilike(f'%{indication}%')
+            )
+        else:
+            # If no indication, at least filter by similar stage
+            query = self.session.query(HistoricalCatalyst).filter(
+                HistoricalCatalyst.stage.ilike(f'%{stage}%')
             )
         
         catalysts = query.all()
         
+        # Count how many are at the same stage
+        same_stage_count = sum(1 for c in catalysts if stage.lower() in c.stage.lower())
+        
         if not catalysts:
             return {
                 "total_events": 0,
-                "note": f"No historical catalysts found for {stage} stage" + (f" in {indication}" if indication else ""),
+                "same_stage_count": 0,
+                "note": f"No historical catalysts found" + (f" for {indication}" if indication else f" for {stage} stage"),
                 "catalyst_details": []
             }
         
+        # Sort catalysts so same-stage ones appear first, then by date (newest first)
+        # This helps the LLM prioritize more relevant comparisons
+        catalysts_sorted = sorted(catalysts, 
+                                 key=lambda c: (
+                                     not (stage.lower() in c.stage.lower()),  # False (0) for same stage, True (1) for different
+                                     -(c.catalyst_date or datetime.min).timestamp() if c.catalyst_date else 0  # Negative for reverse date sort
+                                 ))
+        
         # Include ALL catalyst events for LLM to analyze
         catalyst_details = []
-        for catalyst in catalysts:  # Include all catalysts, not limited
+        for catalyst in catalysts_sorted:
             # Use the pre-calculated 3-day price change
             price_change = catalyst.price_change_3d
             
@@ -62,12 +77,20 @@ class CatalystAnalysisTools:
                 "stage": catalyst.stage,
                 "outcome": catalyst.catalyst_text,
                 "source_url": catalyst.catalyst_source,
-                "price_change_3d": price_change
+                "price_change_3d": price_change,
+                "is_same_stage": stage.lower() in catalyst.stage.lower()
             })
+        
+        # Create informative note
+        if indication:
+            note = f"Found {len(catalysts)} historical events for {indication} across all stages ({same_stage_count} at {stage} stage)"
+        else:
+            note = f"Found {len(catalysts)} historical events at {stage} stage (no indication filter applied)"
         
         return {
             "total_events": len(catalysts),
-            "note": f"Found {len(catalysts)} historical events for LLM analysis",
+            "same_stage_count": same_stage_count,
+            "note": note,
             "catalyst_details": catalyst_details
         }
     
@@ -160,39 +183,66 @@ class CatalystAnalysisTools:
         
         Returns:
             - cash_on_hand: latest cash position
-            - revenue: latest annual revenue
             - market_cap: current market capitalization
             - cash_runway_guidance: placeholder for SEC search
         """
-        # Get latest financial metrics
+        # Get latest financial metrics - expand concept names and look for non-zero values
+        cash_concepts = [
+            'CashAndCashEquivalentsAtCarryingValue',
+            'Cash',
+            'CashCashEquivalentsAndShortTermInvestments',
+            'CashAndCashEquivalents',
+            'CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
+            'CashAndCashEquivalentsPeriodIncreaseDecrease',
+            'CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations'
+        ]
+        
         cash_metrics = self.session.query(FinancialMetric).filter(
             and_(
                 FinancialMetric.company_id == company_id,
-                FinancialMetric.concept.in_(['CashAndCashEquivalentsAtCarryingValue', 
-                                            'Cash', 'CashCashEquivalentsAndShortTermInvestments'])
+                FinancialMetric.concept.in_(cash_concepts),
+                FinancialMetric.value > 0  # Only get non-zero values
             )
-        ).order_by(FinancialMetric.filed_date.desc()).limit(5).all()
+        ).order_by(FinancialMetric.filed_date.desc()).limit(10).all()
         
-        # Get revenue
-        revenue_metrics = self.session.query(FinancialMetric).filter(
-            and_(
-                FinancialMetric.company_id == company_id,
-                FinancialMetric.concept.in_(['Revenues', 'RevenueFromContractWithCustomerExcludingAssessedTax'])
-            )
-        ).order_by(FinancialMetric.filed_date.desc()).first()
         
         # Get latest stock data for market cap
         latest_stock = self.session.query(StockData).filter(
             StockData.company_id == company_id
         ).order_by(StockData.date.desc()).first()
         
-        cash_on_hand = cash_metrics[0].value if cash_metrics else 0
+        # Try to find the most reasonable cash value
+        cash_on_hand = 0
+        if cash_metrics:
+            # Prefer CashAndCashEquivalentsAtCarryingValue if available
+            for metric in cash_metrics:
+                if metric.concept == 'CashAndCashEquivalentsAtCarryingValue':
+                    cash_on_hand = metric.value
+                    break
+            # If not found, use the highest recent value
+            if cash_on_hand == 0:
+                cash_on_hand = max(m.value for m in cash_metrics)
+        
+        # If still no cash found, check if company has ANY financial metrics
+        if cash_on_hand == 0:
+            total_metrics = self.session.query(FinancialMetric).filter(
+                FinancialMetric.company_id == company_id
+            ).count()
+            
+            if total_metrics == 0:
+                cash_runway_guidance = "No financial data synced - run sync_data.py --sec"
+            elif total_metrics < 10:
+                # Company might use simplified reporting (distressed or micro-cap)
+                cash_runway_guidance = "Limited financial reporting - cash details in SEC filings"
+            else:
+                cash_runway_guidance = "Cash not found in XBRL - check SEC filings"
+        else:
+            cash_runway_guidance = "To be searched in SEC filings"
         
         return {
             "cash_on_hand": cash_on_hand,
-            "revenue": revenue_metrics.value if revenue_metrics else 0,
             "market_cap": latest_stock.market_cap if latest_stock else 0,
-            "cash_runway_guidance": "To be searched in SEC filings"
+            "cash_runway_guidance": cash_runway_guidance
         }
     
     def search_sec_filings(self, company_id: int, search_terms: List[str], 

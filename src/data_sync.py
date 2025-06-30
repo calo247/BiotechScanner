@@ -248,7 +248,6 @@ class DataSynchronizer:
                         'catalyst_source': drug_data.get('catalyst_source', ''),
                         'note': drug_data.get('note', ''),
                         'market_info': drug_data.get('market', ''),
-                        'last_update_name': drug_data.get('last_name_updated', ''),
                         'api_last_updated': datetime.utcnow()
                     }
                     

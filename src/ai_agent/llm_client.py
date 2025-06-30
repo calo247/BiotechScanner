@@ -71,6 +71,10 @@ IMPORTANT: This is a public-facing investment report. Do NOT mention:
 
 Key areas to focus on:
 1. ANALYZE THE HISTORICAL CATALYST OUTCOMES - Read each outcome text and determine success/failure patterns yourself
+   - You are provided catalysts from MULTIPLE development stages (Phase 1, 2, 3, Approved, etc.)
+   - Consider how stage differences affect relevance (e.g., Phase 3 data is most relevant for a Phase 3 catalyst)
+   - Earlier stage successes may not predict later stage outcomes, but can show mechanism validation
+   - Note any stage-specific patterns (e.g., safety issues in Phase 1, efficacy failures in Phase 3)
 2. Assess the company's track record by analyzing their specific catalyst outcomes
 3. Analyze financial runway and burn rate implications for catalyst success
 4. Present key insights from regulatory filings and announcements
@@ -194,7 +198,6 @@ Company-specific catalyst history:
 
 FINANCIAL HEALTH:
 - Cash on hand: ${financial['cash_on_hand']:,.0f}
-- Annual revenue: ${financial['revenue']:,.0f}
 - Market cap: ${financial['market_cap']:,.0f}
 - Cash runway: Search SEC filings for management guidance
 
@@ -370,7 +373,6 @@ COMPANY TRACK RECORD ({context.get('company_track_record', {}).get('total_events
 
 COMPLETE FINANCIAL DATA (from XBRL):
 - Cash on Hand: ${context.get('financial_health', {}).get('cash_on_hand', 0):,.0f}
-- Annual Revenue: ${context.get('financial_health', {}).get('revenue', 0):,.0f}
 - Market Cap: ${context.get('financial_health', {}).get('market_cap', 0):,.0f}
 
 IMPORTANT: You should search for cash runway guidance in SEC filings. Look for phrases like:
@@ -398,14 +400,16 @@ IMPORTANT: We have basic financial metrics from XBRL, but you SHOULD search for:
 - Funding plans or upcoming financing needs
 - Statements about when cash will last until
 
-DO NOT search for basic metrics like cash balance or revenue (we have those).
+DO NOT search for basic metrics like cash balance (we have those).
 DO search for forward-looking statements about cash sufficiency.
 
 IMPORTANT: Review the historical catalyst outcomes and 3-day price changes above. Look for patterns in:
-- What caused positive vs negative outcomes in similar catalysts
-- Common safety issues or efficacy concerns that led to failures
+- What caused positive vs negative outcomes (note that we include ALL stages, not just matching stages)
+- Consider stage relevance: Phase 3 outcomes are most predictive for Phase 3 catalysts
+- Common safety issues or efficacy concerns that led to failures at different stages
 - Key success factors that led to positive outcomes
 - How the market reacted (3-day price changes) to different types of outcomes
+- Whether earlier stage data validates the mechanism of action
 
 Based on what you know from the historical context and what has been searched, what should we search for next? Consider:
 1. CASH RUNWAY: Have we found management's guidance on how long their cash will last?
