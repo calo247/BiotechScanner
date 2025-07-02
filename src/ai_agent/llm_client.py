@@ -180,7 +180,16 @@ DRUG INFORMATION:
 - Stage: {drug_info['stage']}
 - Indication: {drug_info['indication']}
 - Catalyst Date: {drug_info['catalyst_date']}
+- Catalyst Event: {drug_info.get('catalyst_description', 'Not specified')}
 - Mechanism of Action: {drug_info.get('mechanism_of_action', 'Not specified')}
+
+CRITICAL - EVENT HISTORY (chronological events for this drug):
+{drug_info.get('event_history', 'No prior events recorded')}
+
+IMPORTANT: If the catalyst is presenting data that was already announced (check EVENT HISTORY above), this will likely have minimal stock impact. Distinguish between:
+- First-time data release = HIGH IMPACT potential
+- Presentation of previously announced data = LOW IMPACT (market already knows)
+- Updated/expanded analysis of prior data = MODERATE IMPACT
 
 HISTORICAL SUCCESS ANALYSIS:
 - Similar catalysts analyzed: {historical['total_events']}
@@ -204,15 +213,28 @@ FINANCIAL HEALTH:
 COMPETITIVE LANDSCAPE:
 {self._format_competitors(competitors[:5])}
 
+PRESENTATION VS. NEW DATA PATTERNS:
+{self._format_presentation_patterns(data.get("presentation_patterns", {}))}
+
 SEC FILING INSIGHTS:
 {self._format_sec_summary(sec_insights[:3])}
 
 Based on this comprehensive data, provide a detailed catalyst analysis report including:
+
+CRITICAL FIRST STEP: Determine if this catalyst involves NEW DATA or PREVIOUSLY ANNOUNCED DATA
+- Review the EVENT HISTORY section carefully
+- If data was already announced, this is likely a LOW IMPACT event (presentation only)
+- Clearly state at the beginning whether this is new data or recycled data
+
+Then provide:
 1. Overall catalyst assessment (probability of success and rationale)
+   - For previously announced data, focus on commercial/partnership potential rather than stock movement
 2. Key opportunities and catalysts for upside
 3. Major risks and potential downside scenarios
 4. How this catalyst compares to historical precedents
-5. Investment recommendation with specific reasoning"""
+5. Investment recommendation with specific reasoning
+
+IMPORTANT: Adjust your success probability and price targets based on whether this is new vs. previously announced data"""
         
         return prompt
     
@@ -325,6 +347,40 @@ Based on this comprehensive data, provide a detailed catalyst analysis report in
         
         return "\n".join(formatted)
     
+    def _format_presentation_patterns(self, patterns: Dict) -> str:
+        """Format presentation vs new data pattern analysis."""
+        if not patterns:
+            return "No pattern analysis available."
+        
+        pres = patterns.get('presentation_events', {})
+        new_data = patterns.get('new_data_events', {})
+        summary = patterns.get('analysis_summary', {})
+        
+        lines = []
+        
+        # Presentation events
+        if pres.get('count', 0) > 0:
+            lines.append(f"Presentation Events (n={pres['count']}):")
+            lines.append(f"  - Average 3-day price change: {pres['avg_price_change']:.2f}%")
+            lines.append(f"  - Median price change: {pres['median_price_change']:.2f}%")
+            lines.append(f"  - Big move rate (>10%): {pres['big_move_rate']:.1f}%")
+        else:
+            lines.append("Presentation Events: No historical data")
+        
+        # New data events
+        if new_data.get('count', 0) > 0:
+            lines.append(f"\nNew Data Events (n={new_data['count']}):")
+            lines.append(f"  - Average 3-day price change: {new_data['avg_price_change']:.2f}%")
+            lines.append(f"  - Median price change: {new_data['median_price_change']:.2f}%")
+            lines.append(f"  - Big move rate (>10%): {new_data['big_move_rate']:.1f}%")
+        else:
+            lines.append("\nNew Data Events: No historical data")
+        
+        # Pattern summary
+        lines.append(f"\nPattern Insight: {summary.get('pattern', 'No pattern identified')}")
+        
+        return "\n".join(lines)
+    
     def _format_sec_summary(self, filings: List[Dict]) -> str:
         """Format SEC filing insights summary."""
         if not filings:
@@ -336,13 +392,45 @@ Based on this comprehensive data, provide a detailed catalyst analysis report in
         
         return "\n".join(formatted)
     
+    def _format_prior_announcements(self, prior_data: Dict) -> str:
+        """Format prior announcement search results."""
+        if not prior_data or not prior_data.get('results'):
+            return ""
+        
+        lines = ["\n⚠️ PRIOR ANNOUNCEMENTS DETECTED:"]
+        lines.append(f"Found {prior_data.get('total_found', 0)} potential prior data releases for this drug:")
+        
+        for i, pr in enumerate(prior_data.get('results', [])[:3]):
+            days_before = pr.get('days_before_catalyst', 'Unknown')
+            lines.append(f"\n{i+1}. {pr.get('title', 'Unknown title')}")
+            lines.append(f"   Date: {pr.get('date', 'Unknown')} ({days_before} days before catalyst)")
+            lines.append(f"   URL: {pr.get('url', 'No URL')}")
+            if pr.get('snippet'):
+                lines.append(f"   Snippet: {pr['snippet'][:150]}...")
+        
+        lines.append("\nIMPORTANT: Verify if the upcoming catalyst is presenting NEW data or RECYCLED data from these prior announcements.")
+        
+        return "\n".join(lines)
+    
     def _format_sec_filings(self, filings: List[Dict]) -> str:
         """Format SEC filings for analysis."""
         formatted = []
         for filing in filings:
-            formatted.append(f"\n{filing['filing_type']} - {filing['filing_date']}:")
-            for match in filing.get('matches', []):
-                formatted.append(f"- {match['section']}: {match['excerpt']}")
+            # Handle both old format (with 'matches') and new format (direct fields)
+            filing_type = filing.get('filing_type', 'Unknown')
+            filing_date = filing.get('filing_date', 'Unknown date')
+            
+            formatted.append(f"\n{filing_type} - {filing_date}:")
+            
+            # Check if this is the new format (direct excerpt field)
+            if 'excerpt' in filing:
+                section = filing.get('section', 'Unknown section')
+                excerpt = filing.get('excerpt', '')
+                formatted.append(f"- {section}: {excerpt}")
+            # Old format with matches array
+            elif 'matches' in filing:
+                for match in filing.get('matches', []):
+                    formatted.append(f"- {match['section']}: {match['excerpt']}")
         
         return "\n".join(formatted)
     
@@ -364,6 +452,12 @@ CATALYST INFORMATION:
 - Stage: {context['drug_info']['stage']}
 - Indication: {context['drug_info']['indication']}
 - Catalyst Date: {context['drug_info']['catalyst_date']}
+- Catalyst Event: {context['drug_info'].get('catalyst_description', 'Not specified')}
+
+EVENT HISTORY FOR THIS DRUG (chronological):
+{context['drug_info'].get('event_history', 'No prior events recorded')}
+
+CRITICAL: Check if the upcoming catalyst is presenting NEW data or PREVIOUSLY ANNOUNCED data. If the event history shows data was already released, search for the original announcement to understand what's already known.
 
 HISTORICAL CATALYST ANALYSIS ({context.get('historical_analysis', {}).get('total_events', 0)} similar events):
 {self._format_historical_catalysts(context.get('historical_analysis', {}).get('catalyst_details', [])[:10])}
@@ -381,6 +475,8 @@ IMPORTANT: You should search for cash runway guidance in SEC filings. Look for p
 - "believe our cash will be sufficient"
 - "fund operations through"
 - "cash to last until"
+
+{self._format_prior_announcements(context.get('prior_announcements', {}))}
 
 PREVIOUS SEARCHES PERFORMED:"""
         

@@ -75,9 +75,11 @@ class CatalystResearchAgent:
                 "company": company.name,
                 "ticker": company.ticker,
                 "stage": drug.stage,
-                "indication": drug.indications_text,
+                "indication": drug.indication_specific,
                 "catalyst_date": drug.catalyst_date.isoformat() if drug.catalyst_date else None,
-                "mechanism_of_action": drug.mechanism_of_action
+                "mechanism_of_action": drug.mechanism_of_action,
+                "event_history": drug.note,  # Historical events separated by dates
+                "catalyst_description": drug.stage_event_label  # What this catalyst is about
             }
         }
         
@@ -97,37 +99,27 @@ class CatalystResearchAgent:
             # For non-Phase stages (like "Approved", "NDA", etc.)
             main_stage = drug.stage.split('-')[0].strip()
         
-        # Extract indication from the drug data
-        indication = None
-        if drug.indications:
-            if isinstance(drug.indications, list) and drug.indications:
-                # Handle list of indications (might be strings or dicts)
-                first_indication = drug.indications[0]
-                if isinstance(first_indication, dict):
-                    indication = first_indication.get('indication', '') or first_indication.get('name', '')
-                else:
-                    indication = str(first_indication)
-            elif isinstance(drug.indications, dict):
-                indication = drug.indications.get('indication', '') or drug.indications.get('name', '')
-            else:
-                indication = str(drug.indications)
-        
-        # Fall back to indications_text if needed
-        if not indication and drug.indications_text:
-            indication = drug.indications_text
+        # Extract indication from the drug data using new column names
+        # We now have separate specific and generic indications
+        indication_specific = drug.indication_specific or ""
+        indication_generic = drug.indication_generic or ""
+        # Keep a combined version for backward compatibility and logging
+        indication = indication_generic or indication_specific or ""
         
         print("\n" + "="*60)
         print("🔎 EXTRACTING INDICATION FROM DRUG DATA")
         print("="*60)
-        print(f"Raw indications data: {drug.indications}")
-        print(f"Indications text: {drug.indications_text}")
-        print(f"Extracted indication: {indication}")
+        print(f"Indication generic: {drug.indication_generic}")
+        print(f"Indication specific: {drug.indication_specific}")
+        print(f"Indication nickname: {drug.indication_nickname}")
+        print(f"Using indication: {indication}")
         print(f"Main stage extracted: {main_stage}")
         print("="*60)
         
         analysis_data["historical_analysis"] = self.tools.get_historical_catalysts(
             stage=main_stage,
-            indication=indication
+            indication_specific=indication_specific,
+            indication_generic=indication_generic
         )
         
         # Print historical analysis for logging
@@ -141,6 +133,10 @@ class CatalystResearchAgent:
         print(f"Current drug stage: {main_stage}")
         print(f"Indication: {indication}")
         print(f"Total historical events found: {hist['total_events']}")
+        if 'specific_matches' in hist:
+            print(f"  - Specific indication matches: {hist['specific_matches']}")
+        if 'generic_matches' in hist:
+            print(f"  - Generic indication matches: {hist['generic_matches']}")
         if 'same_stage_count' in hist:
             print(f"Same stage events: {hist['same_stage_count']}")
         if hist['total_events'] > 0:
@@ -152,7 +148,9 @@ class CatalystResearchAgent:
             # Print ALL catalyst details, not limited
             for i, cat in enumerate(hist.get('catalyst_details', [])):
                 stage_match = " [SAME STAGE]" if cat.get('is_same_stage', False) else " [DIFFERENT STAGE]"
+                match_type = f" [{cat.get('match_type', 'unknown').upper()} MATCH]"
                 print(f"\n{i+1}. {cat['date']}: {cat['company']} - {cat['drug']}")
+                print(f"   Match Type: {match_type}")
                 print(f"   Stage: {cat['stage']}{stage_match}")
                 print(f"   Indication: {cat['indication']}")
                 print(f"   Full Outcome Text: {cat['outcome']}")
@@ -170,7 +168,8 @@ class CatalystResearchAgent:
         # 2. Company Track Record (filtered by indication/drug)
         analysis_data["company_track_record"] = self.tools.get_company_track_record(
             company_id=company.id,
-            indication=indication,
+            indication_specific=indication_specific,
+            indication_generic=indication_generic,
             drug_name=drug.drug_name
         )
         
@@ -183,6 +182,10 @@ class CatalystResearchAgent:
         print(f"Drug filter: {drug.drug_name}")
         print(f"Indication filter: {indication}")
         print(f"Total company events found: {track['total_events']}")
+        if 'specific_matches' in track:
+            print(f"  - Specific indication matches: {track['specific_matches']}")
+        if 'generic_matches' in track:
+            print(f"  - Generic indication matches: {track['generic_matches']}")
         if 'note' in track:
             print(f"Note: {track['note']}")
         if track.get('recent_catalysts'):
@@ -190,7 +193,9 @@ class CatalystResearchAgent:
             
             
             for i, cat in enumerate(track['recent_catalysts']):
+                match_type = f" [{cat.get('match_type', 'unknown').upper()} MATCH]"
                 print(f"\n{i+1}. {cat['date']}: {cat['drug']}")
+                print(f"   Match Type: {match_type}")
                 if cat.get('indication'):
                     print(f"   Indication: {cat['indication']}")
                 print(f"   Stage: {cat['stage']}")
@@ -236,8 +241,10 @@ class CatalystResearchAgent:
             "company": company.name,
             "ticker": company.ticker,
             "stage": drug.stage,
-            "indication": indication or drug.indications_text,
-            "catalyst_date": drug.catalyst_date.isoformat() if drug.catalyst_date else None
+            "indication": indication or drug.indication_specific,
+            "catalyst_date": drug.catalyst_date.isoformat() if drug.catalyst_date else None,
+            "event_history": drug.note,  # Historical events separated by dates
+            "catalyst_description": drug.stage_event_label  # What this catalyst is about
         }
         
         # Use dynamic LLM-driven search
@@ -256,11 +263,40 @@ class CatalystResearchAgent:
         analysis_data["sec_search_stats"] = sec_search_result["stats"]
         analysis_data["sec_search_history"] = sec_search_result["search_history"]
         
-        # 5. Competitive Landscape
+        # 5. Presentation Pattern Analysis
+        print("\n" + "="*60)
+        print("📊 ANALYZING PRESENTATION VS. NEW DATA PATTERNS")
+        print("="*60)
+        
+        presentation_patterns = self.tools.analyze_presentation_patterns(
+            stage=main_stage,
+            indication=indication
+        )
+        analysis_data["presentation_patterns"] = presentation_patterns
+        
+        # Log the pattern analysis
+        pres_stats = presentation_patterns['presentation_events']
+        new_data_stats = presentation_patterns['new_data_events']
+        
+        print(f"Historical pattern analysis:")
+        print(f"- Presentation events analyzed: {pres_stats['count']}")
+        if pres_stats['count'] > 0:
+            print(f"  - Average 3-day price change: {pres_stats['avg_price_change']:.2f}%")
+            print(f"  - Big move rate (>10%): {pres_stats['big_move_rate']:.1f}%")
+        
+        print(f"- New data events analyzed: {new_data_stats['count']}")
+        if new_data_stats['count'] > 0:
+            print(f"  - Average 3-day price change: {new_data_stats['avg_price_change']:.2f}%")
+            print(f"  - Big move rate (>10%): {new_data_stats['big_move_rate']:.1f}%")
+        
+        print(f"\nPattern insight: {presentation_patterns['analysis_summary']['pattern']}")
+        
+        # 6. Competitive Landscape
         if indication:
             analysis_data["competitive_landscape"] = self.tools.get_competitive_landscape(
                 indication=indication,
-                stage=main_stage
+                stage=main_stage,
+                exclude_drug_id=drug.id  # Exclude the drug being analyzed
             )
         else:
             analysis_data["competitive_landscape"] = []
@@ -291,7 +327,7 @@ class CatalystResearchAgent:
             print(f"  - Very rare indication with limited competition")
             print(f"  - First-in-class drug mechanism")
         
-        # 6. Generate Report using LLM
+        # 7. Generate Report using LLM
         print("\n" + "="*60)
         print("📝 GENERATING FINAL CATALYST ANALYSIS REPORT")
         print("="*60)

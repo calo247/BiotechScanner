@@ -50,9 +50,11 @@ class Drug(Base):
     drug_name = Column(Text, nullable=False)  # No length limit
     mechanism_of_action = Column(Text)
     
-    # Indication information (storing as JSON for flexibility)
-    indications = Column(JSON)  # List of indication objects
-    indications_text = Column(Text)  # No length limit
+    # Indication information
+    indication_json = Column(JSON)  # Original JSON data from API
+    indication_specific = Column(Text)  # Specific indication details (e.g., "Advanced adenoid cystic carcinoma")
+    indication_generic = Column(Text)  # Generic indication titles CSV (e.g., "Carcinoma, Solid tumor/s")
+    indication_nickname = Column(Text)  # CSV of indication nicknames (e.g., "NSCLC, MDD")
     
     # Stage and event
     stage = Column(String(100))  # This is probably fine with a limit

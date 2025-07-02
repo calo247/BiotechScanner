@@ -86,6 +86,53 @@ class DataSynchronizer:
             logger.error(f"Error calculating 3-day price change: {e}")
             return None
     
+    def _extract_indication_data(self, indications_json):
+        """
+        Extract titles and nicknames from indications JSON.
+        
+        Args:
+            indications_json: JSON data from the indications field
+            
+        Returns:
+            tuple: (titles_csv, nicknames_csv)
+        """
+        titles = []
+        nicknames = []
+        
+        if not indications_json:
+            return "", ""
+        
+        # Handle different JSON structures
+        if isinstance(indications_json, list):
+            for indication in indications_json:
+                if isinstance(indication, dict):
+                    title = indication.get('title', '').strip()
+                    nickname = indication.get('nickname', '').strip()
+                    if title:
+                        titles.append(title)
+                    if nickname:
+                        nicknames.append(nickname)
+                elif isinstance(indication, str):
+                    # If it's just a string, treat it as a title
+                    titles.append(indication.strip())
+        elif isinstance(indications_json, dict):
+            # Single indication as dict
+            title = indications_json.get('title', '').strip()
+            nickname = indications_json.get('nickname', '').strip()
+            if title:
+                titles.append(title)
+            if nickname:
+                nicknames.append(nickname)
+        elif isinstance(indications_json, str):
+            # If it's a string, treat as a title
+            titles.append(indications_json.strip())
+        
+        # Convert to CSV format
+        titles_csv = ", ".join(titles)
+        nicknames_csv = ", ".join(nicknames)
+        
+        return titles_csv, nicknames_csv
+    
     def _parse_catalyst_date(self, date_value: Any) -> Optional[datetime]:
         """
         Parse catalyst date from API response.
@@ -233,13 +280,18 @@ class DataSynchronizer:
                     stage_event = drug_data.get('stage_event', {})
                     stage = stage_event.get('stage_label', '')
                     
+                    # Extract indication titles and nicknames
+                    indication_generic, indication_nickname = self._extract_indication_data(drug_data.get('indications', []))
+                    
                     # Prepare drug data
                     drug_attrs = {
                         'company': company,  # Use relationship instead of company_id
                         'drug_name': drug_data.get('drug_name', ''),
                         'mechanism_of_action': drug_data.get('mechanism_of_action', ''),
-                        'indications': drug_data.get('indications', []),
-                        'indications_text': drug_data.get('indications_text', ''),
+                        'indication_json': drug_data.get('indications', []),
+                        'indication_specific': drug_data.get('indications_text', ''),
+                        'indication_generic': indication_generic,
+                        'indication_nickname': indication_nickname,
                         'stage': stage,
                         'stage_event_label': stage_event.get('label', ''),
                         'catalyst_date': self._parse_catalyst_date(drug_data.get('catalyst_date')),
