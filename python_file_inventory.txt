@@ -1,0 +1,116 @@
+BIOTECHSCANNER PYTHON FILE INVENTORY
+====================================
+Generated: 2025-07-17
+Total Python Files: 49
+Total Jupyter Notebooks: 0
+
+FILE LISTING BY DIRECTORY
+=========================
+
+ROOT DIRECTORY (4 files)
+------------------------
+/home/tyler/BiotechScanner/analyze_catalyst.py
+/home/tyler/BiotechScanner/fetch_raw_data.py
+/home/tyler/BiotechScanner/sync_data.py
+/home/tyler/BiotechScanner/view_reports.py
+
+SCRIPTS DIRECTORY (4 files)
+---------------------------
+/home/tyler/BiotechScanner/scripts/download_all_sec_filings.py
+/home/tyler/BiotechScanner/scripts/drop_old_indication_columns.py
+/home/tyler/BiotechScanner/scripts/runpod_index_all.py
+/home/tyler/BiotechScanner/scripts/test_gpu_indexing.py
+
+SRC DIRECTORY (3 files)
+-----------------------
+/home/tyler/BiotechScanner/src/__init__.py
+/home/tyler/BiotechScanner/src/config.py
+/home/tyler/BiotechScanner/src/data_sync.py
+
+SRC/AI_AGENT DIRECTORY (6 files)
+--------------------------------
+/home/tyler/BiotechScanner/src/ai_agent/__init__.py
+/home/tyler/BiotechScanner/src/ai_agent/catalyst_agent.py
+/home/tyler/BiotechScanner/src/ai_agent/enhanced_search_tools.py
+/home/tyler/BiotechScanner/src/ai_agent/llm_client.py
+/home/tyler/BiotechScanner/src/ai_agent/llm_driven_search.py
+/home/tyler/BiotechScanner/src/ai_agent/tools.py
+
+SRC/API_CLIENTS DIRECTORY (4 files)
+-----------------------------------
+/home/tyler/BiotechScanner/src/api_clients/__init__.py
+/home/tyler/BiotechScanner/src/api_clients/biopharma_client.py
+/home/tyler/BiotechScanner/src/api_clients/polygon_client.py
+/home/tyler/BiotechScanner/src/api_clients/sec_client.py
+
+SRC/DATABASE DIRECTORY (3 files)
+--------------------------------
+/home/tyler/BiotechScanner/src/database/__init__.py
+/home/tyler/BiotechScanner/src/database/database.py
+/home/tyler/BiotechScanner/src/database/models.py
+
+SRC/MODELS DIRECTORY (1 file)
+-----------------------------
+/home/tyler/BiotechScanner/src/models/__init__.py
+
+SRC/QUERIES DIRECTORY (4 files)
+-------------------------------
+/home/tyler/BiotechScanner/src/queries/__init__.py
+/home/tyler/BiotechScanner/src/queries/catalyst_queries.py
+/home/tyler/BiotechScanner/src/queries/company_queries.py
+/home/tyler/BiotechScanner/src/queries/filters.py
+
+SRC/RAG DIRECTORY (6 files)
+---------------------------
+/home/tyler/BiotechScanner/src/rag/__init__.py
+/home/tyler/BiotechScanner/src/rag/document_processor.py
+/home/tyler/BiotechScanner/src/rag/embeddings.py
+/home/tyler/BiotechScanner/src/rag/faiss_index.py
+/home/tyler/BiotechScanner/src/rag/rag_search.py
+/home/tyler/BiotechScanner/src/rag/ticker_search.py
+
+SRC/UTILS DIRECTORY (1 file)
+----------------------------
+/home/tyler/BiotechScanner/src/utils/__init__.py
+
+TESTS DIRECTORY (12 files)
+--------------------------
+/home/tyler/BiotechScanner/tests/__init__.py
+/home/tyler/BiotechScanner/tests/check_database.py
+/home/tyler/BiotechScanner/tests/check_faiss_integrity.py
+/home/tyler/BiotechScanner/tests/test_database.py
+/home/tyler/BiotechScanner/tests/test_faiss_index.py
+/home/tyler/BiotechScanner/tests/test_historical_price_change.py
+/home/tyler/BiotechScanner/tests/test_metadata_runpod.py
+/home/tyler/BiotechScanner/tests/test_press_releases.py
+/home/tyler/BiotechScanner/tests/test_queries.py
+/home/tyler/BiotechScanner/tests/test_rag_catalyst_search.py
+/home/tyler/BiotechScanner/tests/test_rag_company_filtering.py
+/home/tyler/BiotechScanner/tests/test_rag_verification.py
+
+WEBAPP DIRECTORY (1 file)
+-------------------------
+/home/tyler/BiotechScanner/webapp/app.py
+
+SUMMARY BY DIRECTORY
+====================
+Root:              4 files
+scripts:           4 files  
+src:               3 files
+src/ai_agent:      6 files
+src/api_clients:   4 files
+src/database:      3 files
+src/models:        1 file
+src/queries:       4 files
+src/rag:           6 files
+src/utils:         1 file
+tests:            12 files
+webapp:            1 file
+-----------------------
+TOTAL:            49 Python files
+
+NOTES
+=====
+- Virtual environment (venv) directory excluded from inventory
+- No Jupyter notebook files (.ipynb) found in the project
+- All files listed with full absolute paths
