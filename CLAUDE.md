@@ -433,7 +433,6 @@ flake8>=6.1.0
 
 ### Enhanced Analytics
 - Portfolio-level catalyst tracking
-- Email/SMS alerts for upcoming catalysts
 - Historical success rate visualization
 - Machine learning for outcome prediction
 
